@@ -7,7 +7,9 @@ See git repository alexsuse/Thesis for more information.
 import numpy as np
 from matplotlib import rc
 import matplotlib.pyplot as plt
-T = 10
+import estimation as est
+
+T = 2
 dt = 0.001
 q = 0.01
 QT = 0.1
@@ -67,10 +69,11 @@ def full_stoc_f(sigma0,S,dt,a,sigma,alpha,b,q,r,la,NSamples,rands=None):
 if __name__=='__main__':
 	N = int(T/dt)
 	S = solve_riccatti(N,dt,QT,a,b,q,r)
-	alphas = np.arange(0.001,4.0,0.1)
+	alphas = np.arange(0.001,4.0,0.01)
 	s = 2.0
 	fs = np.zeros_like(alphas)
 	full_fs = np.zeros_like(alphas)
+	estimation_eps = np.zeros_like(alphas)
 	Nsamples = 2000
 	print 'running '+str(alphas.size)+' runs'
 	rands = np.random.uniform(size=(Nsamples,N))
@@ -81,18 +84,28 @@ if __name__=='__main__':
 		print '---->\n.....Mean field %s' % str(fs[i])
 		full_fs[i] = full_stoc_f(s,S,dt,a,eta,alpha,b,q,r,la,Nsamples,rands=rands)
 		print '---->\n.....Stochastic %s' % str(full_fs[i])
-
+		estimation_eps[i] = est.get_eq_eps(-a,eta,alpha,la)
+		print '---->\n.....Average filtering error %s' % str(estimation_eps[i])
+	fsmin,indfs = (np.min(fs),np.argmin(fs))
+	fullmin,indfull = (np.min(full_fs),np.argmin(full_fs))
+	epsmin,indeps = (np.min(estimation_eps),np.argmin(full_fs))
 	rc('text',usetex='true')
-	plt.plot(alphas,fs,alphas,full_fs)
-	plt.legend(['Mean Field', 'Stochastic Average'])
+	estimation_eps = np.max(full_fs)*estimation_eps/np.max(estimation_eps)
+	plt.plot(alphas,fs,alphas,full_fs,alphas,estimation_eps,alphas[indfs],fsmin,'o',alphas[indfull],fullmin,'o',alphas[indeps],epsmin,'o')
+	plt.legend(['Mean Field', 'Stochastic Average','Filtering Error'])
 	plt.xlabel(r'$\alpha$')
 	plt.ylabel(r'$f(\Sigma)$')
 	plt.show()
+	plt.plot(alphas,fs,alphas,full_fs,alphas,estimation_eps,alphas[indfs],fsmin,'o',alphas[indfull],fullmin,'o',alphas[indeps],epsmin,'o')
+	plt.legend(['Mean Field', 'Stochastic Average','Filtering Error'])
+	plt.xlabel(r'$\alpha$')
+	plt.ylabel(r'$f(\Sigma)$')
 	try:
 		a = raw_input('file name?')
 		print 'saving to %s'%a
 		plt.savefig(a)
 	except SyntaxError,NameError:
 		print 'saving to params.png'
-		plt.savefig('params.png')
+		plt.savefig('params.png',dpi=300)
+	plt.show()
 	#print "don't run this as a script, come on!"
