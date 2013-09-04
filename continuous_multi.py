@@ -5,11 +5,8 @@ continuous.py -- evaluate the covariance part of the optimal cost-to-go for LQG 
 See git repository alexsuse/Thesis for more information.
 """
 import numpy as np
-<<<<<<< HEAD
-=======
 import matplotlib
 matplotlib.use('Agg')
->>>>>>> 938b65d2fea01ba5438e8e84a07c903132aa81fd
 from matplotlib import rc
 import matplotlib.pyplot as plt
 import estimation as est
