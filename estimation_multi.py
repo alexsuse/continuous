@@ -21,16 +21,15 @@ def get_eq_eps(gamma,eta,alpha,lamb):
 if __name__=='__main__':
     a = -0.1*numpy.eye(2)
     eta = .40*numpy.eye(2)
-    phi = 0.04
+    dtheta = 0.5
+    phi = .004
     sigma = numpy.eye(2)
-    alphas = numpy.arange(0.001,20.0,0.1)
     thetas = numpy.arange(0.001,numpy.pi/2,0.01)
 #    eps = numpy.zeros_like(alphas)
-    eps = numpy.zeros((alphas.shape[0],alphas.shape[0]))
     const_eps = numpy.zeros_like(thetas)
     for n,i in enumerate(thetas):
         alpha = numpy.array([[numpy.tan(i),0.0],[0.0,1.0/numpy.tan(i)]])
-        lamb = phi*numpy.sqrt(2*numpy.pi*numpy.linalg.det(alpha))
+        lamb = phi*numpy.sqrt((2*numpy.pi)**2*numpy.linalg.det(alpha))/dtheta**2
         print lamb
         const_eps[n] = numpy.trace( get_eq_eps( a, eta, alpha,lamb ) )
         """
