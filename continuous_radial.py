@@ -187,10 +187,10 @@ if __name__=='__main__':
             import numpy
             import scipy.optimize
         lview = c.load_balanced_view()
+        mymap = lambda (f,args) : lview.map_async(f, args, ordered=False)
 
     except:
-        print "NOPE"
-        exit()
+        mymap = lambda (f,args): map(f,args)
 
     N = int(T/dt)
     #precompute solution to the Ricatti equation    
@@ -235,9 +235,9 @@ if __name__=='__main__':
     mf_calls = lview.map_async( mean_field, args, ordered=False )
     full_calls = lview.map_async( full_stoc, args, ordered=False )
     """
-    est_calls = map(estimation, args)
-    mf_calls  = map(mean_field, args)
-    full_calls = map(full_stoc, args)
+    est_calls = mymap(estimation, args)
+    mf_calls  = mymap(mean_field, args)
+    full_calls = mymap(full_stoc, args)
 
     gotten = []
     for n,res in enumerate(est_calls):
