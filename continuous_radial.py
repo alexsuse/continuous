@@ -25,7 +25,7 @@ a = -0.1*numpy.eye(2) #system regenerative force
 b = 0.2*numpy.eye(2) #control constant
 alpha = 0.1*numpy.eye(2) #observation noise
 dtheta = 0.5 #neuron spacing
-phi = 0.004 #neuron maximal rate
+phi = 0.05 #neuron maximal rate
 
 
 def solve_riccatti(N,dt,QT,a,b,q,r):

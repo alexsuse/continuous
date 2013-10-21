@@ -22,9 +22,9 @@ if __name__=='__main__':
     a = -0.1*numpy.eye(2)
     eta = .40*numpy.eye(2)
     dtheta = 0.5
-    phi = .004
+    phi = .05
     sigma = numpy.eye(2)
-    thetas = numpy.arange(0.001,numpy.pi/2,0.01)
+    thetas = numpy.arange(0.0001,numpy.pi/2-0.0001,0.0001)
 #    eps = numpy.zeros_like(alphas)
     const_eps = numpy.zeros_like(thetas)
     for n,i in enumerate(thetas):
