@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import rc
 import matplotlib.pyplot as plt
-import estimation as est
+from estimation_multi import get_eq_eps, d_eps_dt
 from IPython.parallel import Client
 
 """
@@ -185,6 +185,7 @@ if __name__=='__main__':
 
         with dview.sync_imports():
             import numpy
+            import scipy.optimize
         lview = c.load_balanced_view()
 
     except:
@@ -196,59 +197,69 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    alphas = numpy.arange(0.001,4.0,.1)
+    thetas = numpy.arange(0.001,np.pi/2,.0001)
 
     #initial sigma value
     s = 2.0*numpy.eye(2)
 
     #preallocating numpy vectors for better performance
-    fs = numpy.zeros((alphas.shape[0],alphas.shape[0]))
-    full_fs =  numpy.zeros((alphas.shape[0],alphas.shape[0]))
+    est_eps = numpy.zeros_like( thetas )
+    fs = numpy.zeros_like( thetas )
+    full_fs =  numpy.zeros_like( thetas )
     #estimation_eps = numpy.zeros_like(alphas)
     NSamples = 1
 
-    mean_field = lambda (i,j,ax,ay,la) : (i,j,mf_f(s,S,dt,a,eta,numpy.diag([ax**2,ay**2]),b,q,R,la))
-    full_stoc = lambda (i,j,ax,ay,la) : (i,j,full_stoc_f(s,S,dt,a,eta,numpy.diag([ax**2,ay**2]),b,q,R,la,NSamples,rands=rands))
+    def radial( t ):
+        return numpy.diag([numpy.tan(t), 1.0/numpy.tan(t)])
+    estimation = lambda (n,t,la) : (n, numpy.trace( est.get_eq_eps( a, eta, radial(t), la )))
+    mean_field = lambda (n,t,la) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
+    full_stoc = lambda (n,t,la) : (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la,NSamples,rands=rands))
 
     print 'running '+str(alphas.size**2)+' runs'
     rands = numpy.random.uniform(size=(N,NSamples))
 
     args = []
-    for i,alx in enumerate(alphas):
-        for j,aly in enumerate(alphas):
-            
-            la = numpy.sqrt((2*numpy.pi)**2*numpy.linalg.det(numpy.diag([alx**2,aly**2])))*phi/(dtheta**2)
-            args.append((i,j,alx,aly,la)) 
-    
-    dview.push({'mf_f':mf_f,'full_stoc_f':full_stoc_f,'s':s,'S':S,'a':a,'N':N,
+    for i,t in enumerate(thetas):
+        
+        la = numpy.sqrt((2*numpy.pi)**2*numpy.linalg.det(radial(t)))*phi/(dtheta**2)
+        args.append((i,t,la)) 
+
+    dview.push({'radial':radial,'d_eps_dt':d_eps_dt,'get_eq_eps':get_eq_eps,
+                'mf_f':mf_f,'full_stoc_f':full_stoc_f,'s':s,'S':S,'a':a,'N':N,
                 'eta':eta,'b':b,'q':q,'R':R,'NSamples':NSamples,'rands':rands,'dt':dt})
 
-    dview.push({'mf_sigma':mf_sigma,'full_stoc_sigma':full_stoc_sigma})
+    dview.push({'mf_sigma':mf_sigma,'full_stoc_sigma':full_stoc_sigma,'estimation':estimation})
 
+    est_calls = lview.map_async( estimation, args, ordered=False )
     mf_calls = lview.map_async( mean_field, args, ordered=False )
     full_calls = lview.map_async( full_stoc, args, ordered=False )
 
     gotten = []
+    for n,res in enumerate(est_calls):
+        n,v = res
+        gotten.append(n)
+        print 'EST %d entries in, %d'%(len(gotten),n)
+        est_eps[n] = v
+    print 'mean field is in'
+    
+    gotten = []
     for n,res in enumerate(mf_calls):
-        i,j,v = res
-        gotten.append((i,j))
-        print 'MF %d entries in, %d, %d'%(len(gotten),i,j)
-        fs[i,j] = v
+        n,v = res
+        gotten.append(n)
+        print 'MF %d entries in, %d'%(len(gotten),n)
+        fs[n] = v
     print 'mean field is in'
     
     gotten = []
     for n,res in enumerate(full_calls):
-        i,j,v = res
-        gotten.append((i,j))
-        print 'Stochastic %d entries in, %d %d'%(len(gotten),i,j)
-        full_fs[i,j] = v
+        n,v = res
+        gotten.append(n)
+        print 'Stochastic %d entries in, %d'%(len(gotten),n)
+        full_fs[n] = v
     print 'stochastic is in too'
 
-    plt.subplot(2,1,1)
-    plt.imshow(fs,interpolation='nearest')
-    plt.colorbar()
-    plt.subplot(2,1,2)
-    plt.imshow(full_fs, interpolation='nearest')
-    plt.colorbar()
+    plt.subplot(1,1,1)
 
-    plt.savefig('full_multi_heatmap.png',dpi=300)
+    plt.plot(thetas, est_eps, thetas, fs, thetas, full_fs )
+    plt.legend(['estimation','mean field','stochastic'])
+    plt.savefig('comparison_multi_radial.png',dpi=300)
