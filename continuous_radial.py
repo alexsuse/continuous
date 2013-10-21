@@ -197,7 +197,7 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.001,numpy.pi/2,.0001)
+    thetas = numpy.arange(0.001,numpy.pi/2,.001)
 
     #initial sigma value
     s = 2.0*numpy.eye(2)
@@ -235,9 +235,12 @@ if __name__=='__main__':
     mf_calls = lview.map_async( mean_field, args, ordered=False )
     full_calls = lview.map_async( full_stoc, args, ordered=False )
     """
-    est_calls = mymap(estimation, args)
-    mf_calls  = mymap(mean_field, args)
-    full_calls = mymap(full_stoc, args)
+    est_calls = mymap((estimation, args))
+    print "estimation done"
+    mf_calls  = mymap((mean_field, args))
+    print "mean field done"
+    full_calls = mymap((full_stoc, args))
+    print "stochastic done"
 
     gotten = []
     for n,res in enumerate(est_calls):
