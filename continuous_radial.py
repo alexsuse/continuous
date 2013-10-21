@@ -197,7 +197,7 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.001,np.pi/2,.0001)
+    thetas = numpy.arange(0.001,numpy.pi/2,.0001)
 
     #initial sigma value
     s = 2.0*numpy.eye(2)
@@ -209,13 +209,12 @@ if __name__=='__main__':
     #estimation_eps = numpy.zeros_like(alphas)
     NSamples = 1
 
-    def radial( t ):
-        return numpy.diag([numpy.tan(t), 1.0/numpy.tan(t)])
-    estimation = lambda (n,t,la) : (n, numpy.trace( est.get_eq_eps( a, eta, radial(t), la )))
+    radial = lambda t :  numpy.diag([numpy.tan(t), 1.0/numpy.tan(t)])
+    estimation = lambda (n,t,la) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la )))
     mean_field = lambda (n,t,la) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
     full_stoc = lambda (n,t,la) : (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la,NSamples,rands=rands))
 
-    print 'running '+str(alphas.size**2)+' runs'
+    print 'running '+str(thetas)+' runs'
     rands = numpy.random.uniform(size=(N,NSamples))
 
     args = []
@@ -224,15 +223,21 @@ if __name__=='__main__':
         la = numpy.sqrt((2*numpy.pi)**2*numpy.linalg.det(radial(t)))*phi/(dtheta**2)
         args.append((i,t,la)) 
 
-    dview.push({'radial':radial,'d_eps_dt':d_eps_dt,'get_eq_eps':get_eq_eps,
-                'mf_f':mf_f,'full_stoc_f':full_stoc_f,'s':s,'S':S,'a':a,'N':N,
+    """
+    dview.push({'radial':radial})
+    dview.push({'get_eq_eps':get_eq_eps})
+    dview.push({'d_eps_dt':d_eps_dt})
+    dview.push({'mf_f':mf_f,'full_stoc_f':full_stoc_f,'s':s,'S':S,'a':a,'N':N,
                 'eta':eta,'b':b,'q':q,'R':R,'NSamples':NSamples,'rands':rands,'dt':dt})
 
     dview.push({'mf_sigma':mf_sigma,'full_stoc_sigma':full_stoc_sigma,'estimation':estimation})
-
     est_calls = lview.map_async( estimation, args, ordered=False )
     mf_calls = lview.map_async( mean_field, args, ordered=False )
     full_calls = lview.map_async( full_stoc, args, ordered=False )
+    """
+    est_calls = map(estimation, args)
+    mf_calls  = map(mean_field, args)
+    full_calls = map(full_stoc, args)
 
     gotten = []
     for n,res in enumerate(est_calls):
