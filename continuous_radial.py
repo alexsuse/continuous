@@ -17,9 +17,9 @@ Parameters, really ugly, well...
 """
 T = 2
 dt = 0.001
-q = numpy.array([[0.02,0.0],[0.0,0.01]]) #running state cost
+q = numpy.array([[0.04,0.0],[0.0,0.01]]) #running state cost
 QT = 0.1*numpy.eye(2) #final state cost
-R = numpy.array([[0.01,0.0],[0.0,0.02]]) #running control cost
+R = numpy.array([[0.01,0.0],[0.0,0.04]]) #running control cost
 eta = .4*numpy.eye(2) #system noise
 a = -0.1*numpy.eye(2) #system regenerative force
 b = 0.2*numpy.eye(2) #control constant
@@ -269,14 +269,21 @@ if __name__=='__main__':
         full_fs[n] = v
     print 'stochastic is in too'
 
+    
+    fullmin,indfull = (np.min(full_fs),np.argmin(full_fs))
+    mfmin,mfind = (np.min(fs),np.argmin(fs))
+    epsmin,epsind = (np.min(est_eps),np.argmin(est_eps))
+
     rc('text',usetex=True)
 
     fig, (ax1,ax2) = plt.subplots(2,1,sharex=True)
 
     l1, = ax1.plot(thetas, est_eps,'b' )
+    ax1.plot(thetas[epsind],epsmin,'ko')
 
     l2,l3, = ax2.plot( thetas, fs,'r', thetas, full_fs,'g' )
-    
+    ax2.plot(thetas[mfind],mfmin,'ko',thetas[indfull],fullmin,'ko')
+
     ax1.spines['bottom'].set_visible(False)
     ax2.spines['top'].set_visible(False)
     ax1.tick_params(axis='x',which='both',bottom='off')

@@ -22,7 +22,7 @@ a = -0.1
 b = 0.2
 alpha = 0.1
 dtheta = 0.05
-phi = 0.000001
+phi = 0.001
 
 def solve_riccatti(N,dt,QT,a,b,q,r):
     s = np.zeros(N)
@@ -92,13 +92,13 @@ if __name__=='__main__':
     estimation_eps = np.zeros_like(alphas)
 
     # number of samples to be used for stoch simulations  
-    Nsamples = 400
+    Nsamples = 5000
     print 'running '+str(alphas.size)+' runs'
 
     # precompute randoms for better visualization
     rands = np.random.uniform(size=(Nsamples,N))
 
-    for exponent in [+2.0]:
+    for exponent in [+0.0]:
         print 'running for exponent=%lf'%exponent
         finame = 'control_exp_'+str(exponent)+'_max_alpha_'+str(alphas[-1])+'.png'
         if finame in os.listdir('.'):
@@ -131,3 +131,23 @@ if __name__=='__main__':
         plt.show()
         plt.savefig(finame)
         plt.close()
+
+    fig, (ax1,ax2) = plt.subplots(2,1,sharex=True)
+
+    l1, = ax1.plot(alphas, estimation_eps,'b' )
+    ax1.plot(alphas[indeps],epsmin,'ko')
+
+    l2,l3, = ax2.plot( alphas, fs,'r', alphas, full_fs,'g' )
+    ax2.plot(alphas[indfs],fsmin,'ko',alphas[indfull],fullmin,'ko')
+
+    ax1.spines['bottom'].set_visible(False)
+    ax2.spines['top'].set_visible(False)
+    ax1.tick_params(axis='x',which='both',bottom='off')
+    ax2.tick_params(axis='x',which='both',top='off')
+   
+    ax1.set_ylabel(r'$MMSE$')
+    ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
+    ax2.set_xlabel(r'$\alpha$')
+    
+    plt.figlegend([l1,l2,l3],['estimation','mean field','stochastic'],'upper right')
+    plt.savefig('comparison_uni.eps')
