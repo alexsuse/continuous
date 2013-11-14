@@ -1,0 +1,67 @@
+/usr/lib/pymodules/python2.7/matplotlib/__init__.py:923: UserWarning:  This call to matplotlib.use() has no effect
+because the the backend has already been chosen;
+matplotlib.use() must be called *before* pylab, matplotlib.pyplot,
+or matplotlib.backends is imported for the first time.
+
+  if warn: warnings.warn(_use_error_msg)
+
+continuous.py -- evaluate the covariance part of the optimal cost-to-go for LQG in continuous time
+
+See git repository alexsuse/Thesis for more information.
+
+importing numpy on engine(s)
+importing scipy.optimize on engine(s)
+running [  1.00000000e-03   1.10000000e-03   1.20000000e-03 ...,   1.57050000e+00
+   1.57060000e+00   1.57070000e+00] runs
+Traceback (most recent call last):
+  File "continuous_radial.py", line 239, in <module>
+    mf_calls  = mymap(mean_field, args)
+  File "continuous_radial.py", line 214, in <lambda>
+    mean_field = lambda (n,t,la) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
+  File "continuous_radial.py", line 73, in mf_f
+    sigmas = mf_sigma( sigma0, dt, S.size, a, eta, alpha, la )
+  File "continuous_radial.py", line 106, in mf_sigma
+    s[i] =s[i-1]+dt*( sigma_a + sigma_a.T + eta2 -la*jump_term )
+KeyboardInterrupt
+/usr/lib/pymodules/python2.7/matplotlib/__init__.py:923: UserWarning:  This call to matplotlib.use() has no effect
+because the the backend has already been chosen;
+matplotlib.use() must be called *before* pylab, matplotlib.pyplot,
+or matplotlib.backends is imported for the first time.
+
+  if warn: warnings.warn(_use_error_msg)
+
+continuous.py -- evaluate the covariance part of the optimal cost-to-go for LQG in continuous time
+
+See git repository alexsuse/Thesis for more information.
+
+running [  1.00000000e-03   2.00000000e-03   3.00000000e-03 ...,   1.56800000e+00
+   1.56900000e+00   1.57000000e+00] runs
+Traceback (most recent call last):
+  File "continuous_radial.py", line 238, in <module>
+    est_calls = mymap(estimation, args)
+TypeError: <lambda>() takes exactly 1 argument (2 given)
+/usr/lib/pymodules/python2.7/matplotlib/__init__.py:923: UserWarning:  This call to matplotlib.use() has no effect
+because the the backend has already been chosen;
+matplotlib.use() must be called *before* pylab, matplotlib.pyplot,
+or matplotlib.backends is imported for the first time.
+
+  if warn: warnings.warn(_use_error_msg)
+
+continuous.py -- evaluate the covariance part of the optimal cost-to-go for LQG in continuous time
+
+See git repository alexsuse/Thesis for more information.
+
+running [  1.00000000e-03   2.00000000e-03   3.00000000e-03 ...,   1.56800000e+00
+   1.56900000e+00   1.57000000e+00] runs
+Traceback (most recent call last):
+  File "continuous_radial.py", line 239, in <module>
+    mf_calls  = mymap((mean_field, args))
+  File "continuous_radial.py", line 193, in <lambda>
+    mymap = lambda (f,args): map(f,args)
+  File "continuous_radial.py", line 214, in <lambda>
+    mean_field = lambda (n,t,la) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
+  File "continuous_radial.py", line 73, in mf_f
+    sigmas = mf_sigma( sigma0, dt, S.size, a, eta, alpha, la )
+  File "continuous_radial.py", line 106, in mf_sigma
+    s[i] =s[i-1]+dt*( sigma_a + sigma_a.T + eta2 -la*jump_term )
+KeyboardInterrupt

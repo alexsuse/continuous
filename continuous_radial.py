@@ -17,9 +17,9 @@ Parameters, really ugly, well...
 """
 T = 2
 dt = 0.001
-q = numpy.array([[0.04,0.0],[0.0,0.01]]) #running state cost
+q = numpy.array([[0.02,0.0],[0.0,0.01]]) #running state cost
 QT = 0.1*numpy.eye(2) #final state cost
-R = numpy.array([[0.01,0.0],[0.0,0.04]]) #running control cost
+R = numpy.array([[0.01,0.0],[0.0,0.02]]) #running control cost
 eta = .4*numpy.eye(2) #system noise
 a = -0.1*numpy.eye(2) #system regenerative force
 b = 0.2*numpy.eye(2) #control constant
@@ -127,7 +127,7 @@ def full_stoc_sigma(sigma0, dt, N, a, eta, alpha, la, NSamples, rands=None):
 
     if rands is None:
         rng = numpy.random.RandomState(12345)
-        rands = ( rng.uniform( size=(N, Nsamples ) ) < la*dt ).astype('int')
+        rands = ( rng.uniform( size=(N, NSamples ) ) < la*dt ).astype('int')
 
     else:
         assert rands.shape == (N,NSamples)
@@ -179,25 +179,12 @@ if __name__=='__main__':
     print __doc__
 
 
-    try:
-        c = Client(profile='bryonia')
-        dview = c[:]
-
-        with dview.sync_imports():
-            import numpy
-            import scipy.optimize
-        lview = c.load_balanced_view()
-        mymap = lambda (f,args) : lview.map_async(f, args, ordered=False)
-
-    except:
-        mymap = lambda (f,args): map(f,args)
-
     N = int(T/dt)
     #precompute solution to the Ricatti equation    
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.001,numpy.pi/2,.001)
+    thetas = numpy.arange(0.001,numpy.pi/2,.01)
 
     #initial sigma value
     s = 2.0*numpy.eye(2)
@@ -207,34 +194,50 @@ if __name__=='__main__':
     fs = numpy.zeros_like( thetas )
     full_fs =  numpy.zeros_like( thetas )
     #estimation_eps = numpy.zeros_like(alphas)
-    NSamples = 1
+    NSamples = 10000
 
     radial = lambda t :  numpy.diag([numpy.tan(t), 1.0/numpy.tan(t)])
-    estimation = lambda (n,t,la) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la )))
-    mean_field = lambda (n,t,la) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
-    full_stoc = lambda (n,t,la) : (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la,NSamples,rands=rands))
+    la = numpy.sqrt((2*numpy.pi)**2*numpy.linalg.det(radial(thetas[0])))*phi/(dtheta**2)
+    estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la )))
+    mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
+    full_stoc = lambda (n,t) : (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la,NSamples,rands=rands))
 
-    print 'running '+str(thetas)+' runs'
+    print 'running '+str(thetas.shape[0])+' runs'
     rands = numpy.random.uniform(size=(N,NSamples))
 
     args = []
     for i,t in enumerate(thetas):
         
-        la = numpy.sqrt((2*numpy.pi)**2*numpy.linalg.det(radial(t)))*phi/(dtheta**2)
-        args.append((i,t,la)) 
+        args.append((i,t)) 
 
-    """
-    dview.push({'radial':radial})
-    dview.push({'get_eq_eps':get_eq_eps})
-    dview.push({'d_eps_dt':d_eps_dt})
-    dview.push({'mf_f':mf_f,'full_stoc_f':full_stoc_f,'s':s,'S':S,'a':a,'N':N,
-                'eta':eta,'b':b,'q':q,'R':R,'NSamples':NSamples,'rands':rands,'dt':dt})
+    try:
+        c = Client(profile='bryonia')
+        dview = c[:]
 
-    dview.push({'mf_sigma':mf_sigma,'full_stoc_sigma':full_stoc_sigma,'estimation':estimation})
-    est_calls = lview.map_async( estimation, args, ordered=False )
-    mf_calls = lview.map_async( mean_field, args, ordered=False )
-    full_calls = lview.map_async( full_stoc, args, ordered=False )
-    """
+        with dview.sync_imports():
+            import numpy
+            import scipy
+            import scipy.optimize
+        #dview = c.load_balanced_view()
+
+        print 'all good with parallel'
+
+        mymap = lambda (f,args) : dview.map_async(f, args )
+
+        dview.push({'radial':radial})
+        dview.push({'get_eq_eps':get_eq_eps})
+        dview.push({'d_eps_dt':d_eps_dt})
+        dview.push({'mf_f':mf_f,'full_stoc_f':full_stoc_f,'s':s,'S':S,'a':a,'N':N,'la':la,
+                    'eta':eta,'b':b,'q':q,'R':R,'NSamples':NSamples,'rands':rands,'dt':dt})
+
+        dview.push({'mf_sigma':mf_sigma,'full_stoc_sigma':full_stoc_sigma,'estimation':estimation})
+
+    except:
+        mymap = lambda (f,args): map(f,args)
+    #est_calls = dview.map_async( estimation, args, ordered=False )
+    #mf_calls = dview.map_async( mean_field, args, ordered=False )
+    #full_calls = dview.map_async( full_stoc, args, ordered=False )
+    
     est_calls = mymap((estimation, args))
     print "estimation done"
     mf_calls  = mymap((mean_field, args))
@@ -248,7 +251,7 @@ if __name__=='__main__':
         gotten.append(n)
         print 'EST %d entries in, %d'%(len(gotten),n)
         est_eps[n] = v
-    print 'mean field is in'
+    print 'estimation is in'
     
     gotten = []
     for n,res in enumerate(mf_calls):
@@ -266,8 +269,22 @@ if __name__=='__main__':
         full_fs[n] = v
     print 'stochastic is in too'
 
-    plt.subplot(1,1,1)
+    rc('text',usetex=True)
 
-    plt.plot(thetas, est_eps, thetas, fs, thetas, full_fs )
-    plt.legend(['estimation','mean field','stochastic'])
-    plt.savefig('comparison_multi_radial.png',dpi=300)
+    fig, (ax1,ax2) = plt.subplots(2,1,sharex=True)
+
+    l1, = ax1.plot(thetas, est_eps,'b' )
+
+    l2,l3, = ax2.plot( thetas, fs,'r', thetas, full_fs,'g' )
+    
+    ax1.spines['bottom'].set_visible(False)
+    ax2.spines['top'].set_visible(False)
+    ax1.tick_params(axis='x',which='both',bottom='off')
+    ax2.tick_params(axis='x',which='both',top='off')
+   
+    ax1.set_ylabel(r'$MMSE$')
+    ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
+    ax2.set_xlabel(r'$\theta$')
+    
+    plt.figlegend([l1,l2,l3],['estimation','mean field','stochastic'],'upper right')
+    plt.savefig('comparison_multi_radial.eps')
