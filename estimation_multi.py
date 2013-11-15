@@ -10,7 +10,7 @@ import numpy as numpy
 import scipy.optimize
 
 def d_eps_dt(eps,a,eta,alpha,lamb):
-    return numpy.dot( a, eps) + numpy.dot( eps, a.T) + numpy.dot(eta, eta.T) -lamb*numpy.linalg.solve( alpha+eps ,numpy.dot(eps,eps))
+    return numpy.dot( a, eps) + numpy.dot( eps, a.T) + numpy.dot(eta, eta.T) -lamb*numpy.dot(eps,numpy.linalg.solve( alpha+eps ,eps))
     #return -numpy.dot(gamma,eps)-numpy.dot(eps,gamma.T)+numpy.dot(eta.T,eta)-lamb*numpy.linalg.solve(alpha+eps,numpy.dot(eps,eps))
 
 def get_eq_eps(gamma,eta,alpha,lamb):

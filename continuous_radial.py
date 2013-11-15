@@ -101,8 +101,7 @@ def mf_sigma(sigma0, dt, N, a , eta, alpha, la):
     eta2 = numpy.dot( eta, eta.T )
     for i in xrange(1,N):
         sigma_a = numpy.dot( s[i-1] , a )
-        s2 = numpy.dot( s[i-1], s[i-1] )
-        jump_term = numpy.linalg.solve( s[i-1] + alpha, s2 )
+        jump_term = numpy.dot(s[i-1],numpy.linalg.solve( s[i-1] + alpha, s[i-1] ))
         s[i] =s[i-1]+dt*( sigma_a + sigma_a.T + eta2 -la*jump_term )
     return s
 
@@ -138,7 +137,7 @@ def full_stoc_sigma(sigma0, dt, N, a, eta, alpha, la, NSamples, rands=None):
     for i in xrange(1,N):
         asigmas = numpy.dot( sigmas[i-1], a) 
         nojump = asigmas + asigmas.swapaxes( 1, 2 ) + eta2
-        jump = [ numpy.dot(numpy.linalg.solve( si + alpha, si ), alpha ) for si in sigmas[i-1]]
+        jump = [ numpy.dot(si,numpy.linalg.solve( si + alpha, alpha )) for si in sigmas[i-1]]
         splus1 = numpy.asarray( [ sigmas[i-1]+dt*nojump, jump] )
         sigmas[i] = splus1[ rands[i], range( NSamples ) ]
 
@@ -194,7 +193,7 @@ if __name__=='__main__':
     fs = numpy.zeros_like( thetas )
     full_fs =  numpy.zeros_like( thetas )
     #estimation_eps = numpy.zeros_like(alphas)
-    NSamples = 10000
+    NSamples = 1000
 
     radial = lambda t :  numpy.diag([numpy.tan(t), 1.0/numpy.tan(t)])
     la = numpy.sqrt((2*numpy.pi)**2*numpy.linalg.det(radial(thetas[0])))*phi/(dtheta**2)
@@ -211,7 +210,7 @@ if __name__=='__main__':
         args.append((i,t)) 
 
     try:
-        c = Client(profile='bryonia')
+        c = Client()
         dview = c[:]
 
         with dview.sync_imports():
@@ -270,9 +269,9 @@ if __name__=='__main__':
     print 'stochastic is in too'
 
     
-    fullmin,indfull = (np.min(full_fs),np.argmin(full_fs))
-    mfmin,mfind = (np.min(fs),np.argmin(fs))
-    epsmin,epsind = (np.min(est_eps),np.argmin(est_eps))
+    fullmin,indfull = (numpy.min(full_fs),numpy.argmin(full_fs))
+    mfmin,mfind = (numpy.min(fs),numpy.argmin(fs))
+    epsmin,epsind = (numpy.min(est_eps),numpy.argmin(est_eps))
 
     rc('text',usetex=True)
 
