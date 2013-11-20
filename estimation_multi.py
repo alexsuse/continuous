@@ -13,6 +13,14 @@ def d_eps_dt(eps,a,eta,alpha,lamb):
     return numpy.dot( a, eps) + numpy.dot( eps, a.T) + numpy.dot(eta, eta.T) -lamb*numpy.dot(eps,numpy.linalg.solve( alpha+eps ,eps))
     #return -numpy.dot(gamma,eps)-numpy.dot(eps,gamma.T)+numpy.dot(eta.T,eta)-lamb*numpy.linalg.solve(alpha+eps,numpy.dot(eps,eps))
 
+def d_eps_kalman( eps, a, eta, alpha ):
+    return numpy.dot( a, eps) + numpy.dot( eps, a.T) + numpy.dot(eta, eta.T) - numpy.dot( eps, numpy.linalg.solve( alpha, eps))
+
+def get_eq_kalman(gamma,eta,alpha):
+    f = lambda e, g=gamma,et=eta,a=alpha : d_eps_kalman(e.reshape((2,2)),g,et,a).reshape((4,))
+    ret =  scipy.optimize.fsolve(f,numpy.eye(2).reshape((4,))).reshape((2,2))
+    return ret
+
 def get_eq_eps(gamma,eta,alpha,lamb):
     f = lambda e, g=gamma,et=eta,a=alpha,l=lamb : d_eps_dt(e.reshape((2,2)),g,et,a,l).reshape((4,))
     ret =  scipy.optimize.fsolve(f,numpy.eye(2).reshape((4,))).reshape((2,2))
@@ -27,11 +35,13 @@ if __name__=='__main__':
     thetas = numpy.arange(0.0001,numpy.pi/2-0.0001,0.0001)
 #    eps = numpy.zeros_like(alphas)
     const_eps = numpy.zeros_like(thetas)
+    kalman_eps = numpy.zeros_like(thetas)
     for n,i in enumerate(thetas):
         alpha = numpy.array([[numpy.tan(i),0.0],[0.0,1.0/numpy.tan(i)]])
         lamb = phi*numpy.sqrt((2*numpy.pi)**2*numpy.linalg.det(alpha))/dtheta**2
-        print lamb
+        print n
         const_eps[n] = numpy.trace( get_eq_eps( a, eta, alpha,lamb ) )
+        kalman_eps[n] = numpy.trace( get_eq_kalman( a, eta, alpha ) )
         """
     for n,i in enumerate(alphas):
         for m,j in enumerate(alphas):
@@ -41,6 +51,8 @@ if __name__=='__main__':
             eps[n,m] = numpy.trace(get_eq_eps( a, eta, alpha, lamb ))
 """
     plt.plot( thetas, const_eps )
+    plt.plot( thetas, kalman_eps )
+    plt.legend(['Poisson','Kalman'])
     plt.savefig('estimation_const.png')
 
    # plt.imshow(eps)

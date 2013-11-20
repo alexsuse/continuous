@@ -50,6 +50,36 @@ def solve_riccatti(N,dt,QT,a,b,q,r):
         s[N-i-2] = s[N-i-1]+dt*(- numpy.dot( Sb, numpy.linalg.solve( R, Sb.T ) ) + Sa + Sa.T + 0.5 * q ) 
     return s
 
+def kalman_f(sigma0,S,dt,a, eta ,alpha,b,q,r):
+    """
+    mf_f computes the mean-field approximation
+    to the variance component of the control cost
+    given by the function f. The value of f is given
+    by tr(s(0) sigma0 ) + int tr[s(y) b R^-1(y) b s(y) sigma(y)] dy
+    arguments:
+    sigma0 :: initial value of sigma at t=0
+    S      :: solution of the riccatti equation
+    dt     :: time increment
+    a      :: parameter of system dynamics
+    eta    :: sqrt of noise covariance
+    alpha  :: tuning matrix of neurons
+    b      :: control parameter of system
+    q      :: state-cost parameters
+    r      :: control-cost parameters
+    la     :: population firing rate
+    """
+    f = numpy.trace( numpy.dot( sigma0, S[0] ) )
+
+    sigmas = kalman_sigma( sigma0, dt, S.size, a, eta, alpha )
+
+    bs = numpy.dot( S, b)
+
+    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.solve( R, numpy.dot( bss, sigmas[i] ) ) ) for i,bss in enumerate(bs) ]  , axis = 0) )
+    
+    f += dt * integral
+    
+    return f
+
 def mf_f(sigma0,S,dt,a, eta ,alpha,b,q,r,la):
     """
     mf_f computes the mean-field approximation
@@ -80,6 +110,30 @@ def mf_f(sigma0,S,dt,a, eta ,alpha,b,q,r,la):
     
     return f
 
+
+def kalman_sigma(sigma0, dt, N, a , eta, alpha):
+    """
+    mf_sigma computes the expected value of sigma
+    under the mean-field approximation given hte parameters.
+    system dynamics is given by
+    dx = a x dt + eta dW
+    arguments are
+    sigma0 :: initial value of sigma at t=0
+    dt     :: time increment
+    N      :: number of time intervals
+    a      :: parameter of system dynamics
+    eta    :: sqrt of covariance matrix
+    alpha  :: width of tuninig functinos
+    la     :: population firing rate
+    """
+    s = numpy.zeros((N,2,2))
+    s[0] = sigma0
+    eta2 = numpy.dot( eta, eta.T )
+    for i in xrange(1,N):
+        sigma_a = numpy.dot( s[i-1] , a )
+        obs_term = numpy.dot(s[i-1],numpy.linalg.solve( alpha, s[i-1] ))
+        s[i] =s[i-1]+dt*( sigma_a + sigma_a.T + eta2 -obs_term )
+    return s
 
 def mf_sigma(sigma0, dt, N, a , eta, alpha, la):
     """
@@ -190,8 +244,10 @@ if __name__=='__main__':
 
     #preallocating numpy vectors for better performance
     est_eps = numpy.zeros_like( thetas )
+    k_est_eps = numpy.zeros_like( thetas )
     fs = numpy.zeros_like( thetas )
     full_fs =  numpy.zeros_like( thetas )
+    k_cont_fs = numpy.zeros_like( thetas )
     #estimation_eps = numpy.zeros_like(alphas)
     NSamples = 1000
 
@@ -200,6 +256,8 @@ if __name__=='__main__':
     estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la )))
     mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
     full_stoc = lambda (n,t) : (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la,NSamples,rands=rands))
+    k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, radial(t) ) ) ))
+    k_control = lambda (n,t) : (n, kalman_f(s, S, dt, a, eta, radial(t), b, q, R ) )
 
     print 'running '+str(thetas.shape[0])+' runs'
     rands = numpy.random.uniform(size=(N,NSamples))
@@ -224,12 +282,12 @@ if __name__=='__main__':
         mymap = lambda (f,args) : dview.map_async(f, args )
 
         dview.push({'radial':radial})
-        dview.push({'get_eq_eps':get_eq_eps})
-        dview.push({'d_eps_dt':d_eps_dt})
+        dview.push({'get_eq_eps':get_eq_eps,'d_eps_dt':d_eps_dt,
+                    'get_eq_kalman':get_eq_kalman,'d_eps_kalman':d_eps_kalman})
         dview.push({'mf_f':mf_f,'full_stoc_f':full_stoc_f,'s':s,'S':S,'a':a,'N':N,'la':la,
                     'eta':eta,'b':b,'q':q,'R':R,'NSamples':NSamples,'rands':rands,'dt':dt})
-
-        dview.push({'mf_sigma':mf_sigma,'full_stoc_sigma':full_stoc_sigma,'estimation':estimation})
+        dview.push({'mf_sigma':mf_sigma,'full_stoc_sigma':full_stoc_sigma,'estimation':estimation,
+                    'kalman_sigma':kalman_sigma,'kalman_f':kalman_f})
 
     except:
         mymap = lambda (f,args): map(f,args)
@@ -239,10 +297,21 @@ if __name__=='__main__':
     
     est_calls = mymap((estimation, args))
     print "estimation done"
+    k_est_calls = mymap((k_estimation, args))
+    print "kalman estimation"
     mf_calls  = mymap((mean_field, args))
     print "mean field done"
     full_calls = mymap((full_stoc, args))
     print "stochastic done"
+    k_control_calls = mymap((k_control, args ))
+
+    gotten = []
+    for n,res in enumerate(k_est_calls):
+        n,v = res
+        gotten.append(n)
+        print 'Kalman %d entries in, %d'%(len(gotten),n)
+        k_est_eps[n] = v
+    print 'kalman estimation is in'
 
     gotten = []
     for n,res in enumerate(est_calls):
@@ -267,6 +336,14 @@ if __name__=='__main__':
         print 'Stochastic %d entries in, %d'%(len(gotten),n)
         full_fs[n] = v
     print 'stochastic is in too'
+
+    gotten = []
+    for n,res in enumerate(k_control_calls):
+        n,v = res
+        gotten.append(n)
+        print 'LQG %d entries in, %d'%(len(gotten),n)
+        k_cont_eps[n] = v
+    print 'kalman control is in'
 
     
     fullmin,indfull = (numpy.min(full_fs),numpy.argmin(full_fs))
