@@ -17,9 +17,9 @@ Parameters, really ugly, well...
 """
 T = 2
 dt = 0.001
-q = numpy.array([[0.04,0.0],[0.0,0.01]]) #running state cost
+q = numpy.array([[0.02,0.0],[0.0,0.01]]) #running state cost
 QT = 0.1*numpy.eye(2) #final state cost
-R = numpy.array([[0.01,0.0],[0.0,0.04]]) #running control cost
+R = numpy.array([[0.01,0.0],[0.0,0.02]]) #running control cost
 eta = .4*numpy.eye(2) #system noise
 a = -0.1*numpy.eye(2) #system regenerative force
 b = 0.2*numpy.eye(2) #control constant
@@ -294,3 +294,6 @@ if __name__=='__main__':
     
     plt.figlegend([l1,l2,l3],['estimation','mean field','stochastic'],'upper right')
     plt.savefig('comparison_multi_radial.eps')
+
+    print 'eps-optimal', radial(thetas[epsind])
+    print 'cont-optimal', radial(thetas[indfull])
