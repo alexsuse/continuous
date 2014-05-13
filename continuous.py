@@ -22,7 +22,7 @@ a = -0.1
 b = 0.2
 alpha = 0.1
 dtheta = 0.05
-phi = 0.001
+phi = 0.1
 
 def solve_riccatti(N,dt,QT,a,b,q,r):
     s = np.zeros(N)
