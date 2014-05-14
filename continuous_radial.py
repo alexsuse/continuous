@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import rc
 import matplotlib.pyplot as plt
-from estimation_multi import get_eq_eps, d_eps_dt
+from estimation_multi import get_eq_eps, d_eps_dt, get_eq_kalman, d_eps_kalman
 from IPython.parallel import Client
 
 """
@@ -46,7 +46,7 @@ def solve_riccatti(N,dt,QT,a,b,q,r):
     s[-1] = QT
     for i in range(N-1):
         Sa = numpy.dot( s[N-i-1], a)
-        Sb = numpy.dot( s[N-i-1], b)
+        Sb = numpy.dot( s[N-i-1], b.T)
         s[N-i-2] = s[N-i-1]+dt*(- numpy.dot( Sb, numpy.linalg.solve( R, Sb.T ) ) + Sa + Sa.T + 0.5 * q ) 
     return s
 
@@ -72,9 +72,9 @@ def kalman_f(sigma0,S,dt,a, eta ,alpha,b,q,r):
 
     sigmas = kalman_sigma( sigma0, dt, S.size, a, eta, alpha )
 
-    bs = numpy.dot( S, b)
+    bs = numpy.dot( S, b.T)
 
-    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.solve( R, numpy.dot( bss, sigmas[i] ) ) ) for i,bss in enumerate(bs) ]  , axis = 0) )
+    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.solve( R, numpy.dot( bss.T, sigmas[i] ) ) ) for i,bss in enumerate(bs) ]  , axis = 0) )
     
     f += dt * integral
     
@@ -102,9 +102,9 @@ def mf_f(sigma0,S,dt,a, eta ,alpha,b,q,r,la):
 
     sigmas = mf_sigma( sigma0, dt, S.size, a, eta, alpha, la )
 
-    bs = numpy.dot( S, b)
+    bs = numpy.dot( S, b.T)
 
-    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.solve( R, numpy.dot( bss, sigmas[i] ) ) ) for i,bss in enumerate(bs) ]  , axis = 0) )
+    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.solve( R, numpy.dot( bss.T, sigmas[i] ) ) ) for i,bss in enumerate(bs) ]  , axis = 0) )
     
     f += dt * integral
     
@@ -223,7 +223,7 @@ def full_stoc_f(sigma0, S, dt, a, eta, alpha, b, q, r, la, NSamples,rands=None):
    
     bs = numpy.dot( S, b )
     
-    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.solve( R, numpy.dot( bss, sigmas[i] ) ) ) for i,bss in enumerate(bs) ], axis = 0  ) )
+    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.solve( R, numpy.dot( bss.T, sigmas[i] ) ) ) for i,bss in enumerate(bs) ], axis = 0  ) )
 
     f += dt * integral
     return f
@@ -237,7 +237,7 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.001,numpy.pi/2,.01)
+    thetas = numpy.arange(0.1,numpy.pi/2-0.01,.01)
 
     #initial sigma value
     s = 2.0*numpy.eye(2)
@@ -256,7 +256,7 @@ if __name__=='__main__':
     estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la )))
     mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
     full_stoc = lambda (n,t) : (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la,NSamples,rands=rands))
-    k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, radial(t) ) ) ))
+    k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, radial(t) ) ) )
     k_control = lambda (n,t) : (n, kalman_f(s, S, dt, a, eta, radial(t), b, q, R ) )
 
     print 'running '+str(thetas.shape[0])+' runs'
@@ -268,7 +268,7 @@ if __name__=='__main__':
         args.append((i,t)) 
 
     try:
-        c = Client()
+        c = Client(profile='local_cluster')
         dview = c[:]
 
         with dview.sync_imports():
@@ -342,23 +342,27 @@ if __name__=='__main__':
         n,v = res
         gotten.append(n)
         print 'LQG %d entries in, %d'%(len(gotten),n)
-        k_cont_eps[n] = v
+        k_cont_fs[n] = v
     print 'kalman control is in'
 
     
     fullmin,indfull = (numpy.min(full_fs),numpy.argmin(full_fs))
     mfmin,mfind = (numpy.min(fs),numpy.argmin(fs))
     epsmin,epsind = (numpy.min(est_eps),numpy.argmin(est_eps))
+    kmin, kind = (numpy.min(k_est_eps),numpy.argmin(k_est_eps))
+    lqgmin, lqgind = (numpy.min(k_cont_fs),numpy.argmin(k_cont_fs))
 
     rc('text',usetex=True)
 
     fig, (ax1,ax2) = plt.subplots(2,1,sharex=True)
 
-    l1, = ax1.plot(thetas, est_eps,'b' )
-    ax1.plot(thetas[epsind],epsmin,'ko')
+    l1,l2 = ax1.plot(thetas, est_eps,'b', thetas, k_est_eps,'k-.' )
+    ax1.plot(thetas[epsind],epsmin,'ko',thetas[kind],kmin,'ko')
 
-    l2,l3, = ax2.plot( thetas, fs,'r', thetas, full_fs,'g' )
-    ax2.plot(thetas[mfind],mfmin,'ko',thetas[indfull],fullmin,'ko')
+    l3,l4,l5 = ax2.plot( thetas, fs,'r', thetas, full_fs,'g', thetas, k_cont_fs,'k-.' )
+    ax2.plot(thetas[mfind],mfmin,'ko',thetas[indfull],fullmin,'ko',thetas[lqgind],lqgmin,'ko')
+
+    print "lqg",lqgind,thetas[lqgind],lqgmin
 
     ax1.spines['bottom'].set_visible(False)
     ax2.spines['top'].set_visible(False)
@@ -369,7 +373,7 @@ if __name__=='__main__':
     ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
     ax2.set_xlabel(r'$\theta$')
     
-    plt.figlegend([l1,l2,l3],['estimation','mean field','stochastic'],'upper right')
+    plt.figlegend([l1,l2,l3,l4,l5],['estimation','kalman filter','mean field','stochastic','LQG control'],'upper right')
     plt.savefig('comparison_multi_radial.eps')
 
     print 'eps-optimal', radial(thetas[epsind])

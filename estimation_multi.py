@@ -32,7 +32,7 @@ if __name__=='__main__':
     dtheta = 0.5
     phi = .05
     sigma = numpy.eye(2)
-    thetas = numpy.arange(0.0001,numpy.pi/2-0.0001,0.0001)
+    thetas = numpy.arange(0.001,numpy.pi/2-0.0001,0.0001)
 #    eps = numpy.zeros_like(alphas)
     const_eps = numpy.zeros_like(thetas)
     kalman_eps = numpy.zeros_like(thetas)
