@@ -7,6 +7,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.optimize as opt
+import os
 
 def d_eps_dt(eps,gamma,eta,alpha,lamb):
 	return -2*gamma*eps+eta**2-lamb*eps**2/(alpha**2+eps)
@@ -79,3 +80,4 @@ if __name__=='__main__':
     plt.legend()
     plt.show()
     plt.savefig('estimation_uni.png')
+    os.system("mutt -a \"estimation_uni.png\" -s \"Plot\" --recipient=alexsusemihl@gmail.com")
