@@ -43,25 +43,6 @@ def mf_f(sigma0,S,dt,a,sigma,alpha,b,q,r,la):
     f+= dt*np.sum((b**2*S**2/r)*mf_sigma(sigma0,dt,S.size,a,sigma,alpha,la))
     return f
 
-def full_stoc_sigma(sigma0,dt,N,a,sigma,alpha,la,NSamples,rands=None, discard=0):
-    sigmas = np.zeros((NSamples,N))
-    sigmas[:,0] = sigma0
-    if rands==None:
-        rng = np.random.RandomState(12345)
-        rands = (rng.uniform(size=(NSamples,N))<la*dt).astype('int')
-    else:
-        assert rands.shape == (NSamples, N)
-        rands = (rands<la*dt).astype('int')
-    for i in xrange(0, discard):
-        rand_sample = (rng.uniform(size=(NSamples,1))<la*dt).astype('int')
-        splus1 = np.asarray([sigmas[:,0]+dt*(2*a*sigmas[:,0]+sigma**2),alpha**2*sigmas[:,0]/(alpha**2+sigmas[:,0])])
-        sigmas[:,0] = splus1[rand_sample[:,0],range(NSamples)]
-    
-    for i in xrange(1,N):
-        splus1 = np.asarray([sigmas[:,i-1]+dt*(2*a*sigmas[:,i-1]+sigma**2),alpha**2*sigmas[:,i-1]/(alpha**2+sigmas[:,i-1])])
-        sigmas[:,i] = splus1[rands[:,i],range(NSamples)]
-    return np.mean(sigmas,axis=0)
-
 
 def full_stoc_f(sigma0,S,dt,a,sigma,alpha,b,q,r,la,NSamples,rands=None):
     f = sigma0*S[0]
