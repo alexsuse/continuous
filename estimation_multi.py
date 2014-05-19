@@ -20,7 +20,7 @@ def d_eps_kalman( eps, a, eta, alpha ):
     return numpy.dot( a, eps) +\
            numpy.dot( eps, a.T) +\
            numpy.dot(eta, eta.T) -\
-           numpy.dot( eps, numpy.linalg.solve( alpha, eps))
+           numpy.dot( eps, numpy.linalg.lstsq( alpha, eps)[0])
 
 def get_eq_kalman(gamma,eta,alpha, N=2):
     f = lambda e, g=gamma,et=eta,a=alpha :\

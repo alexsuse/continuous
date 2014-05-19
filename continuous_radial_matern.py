@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import rc
 import matplotlib.pyplot as plt
-from estimation_multi import get_eq_eps, d_eps_dt
+from estimation_multi import get_eq_eps, d_eps_dt, get_eq_kalman
 from IPython.parallel import Client
 
 """
@@ -27,16 +27,22 @@ R = numpy.array([[0.01,0.0,0.0,0.0],
                  [0.0,0.0,0.02,0.0],
                  [0.0,0.0,0.0,0.02]]) #running control cost
 eta = .4*numpy.diag([0.0,1.0,0.0,1.0]) #system noise
-gamma = 0.1
+gamma = 0.8
 a = numpy.array([[0.0,1.0,0.0,0.0],
-                 [-2*gamma,-gamma**2,0.0,0.0],
+                 [-gamma**2,-2*gamma,0.0,0.0],
                  [0.0,0.0,0.0,1.0],
-                 [0.0,0.0,-2*gamma,-gamma**2]])#system regenerative force
+                 [0.0,0.0,-gamma**2,-2*gamma]])#system regenerative force
 b = 0.2*numpy.eye(4) #control constant
 alpha = 0.1*numpy.diag([0.0,1.0,0.0,1.0]) #observation noise
 dtheta = 0.5 #neuron spacing
-phi = 0.05 #neuron maximal rate
+phi = .01 #neuron maximal rate
 
+def pseudo_determinant(m):
+    det = 1.0
+    for i in numpy.diagonal(m):
+        if i != 0.0:
+            det*=i
+    return det
 
 def solve_riccatti(N,dt,QT,a,b,q,r):
     """
@@ -84,8 +90,8 @@ def kalman_f(sigma0,S,dt,a, eta ,alpha,b,q,r):
 
     bs = numpy.dot( S, b)
 
-    integrand = numpy.dot(bss, numpy.linalg.solve(R, numpy.dot(bss, sigmas[i])))
-                  for i,bss in enumerate(bs)]
+    integrand = [numpy.dot(bss, numpy.linalg.solve(R, numpy.dot(bss, sigmas[i])))
+                    for i,bss in enumerate(bs)]
 
     integral = numpy.trace(numpy.sum(integrand, axis=0))
     
@@ -147,7 +153,7 @@ def kalman_sigma(sigma0, dt, N, a , eta, alpha):
     eta2 = numpy.dot( eta, eta.T )
     for i in xrange(1,N):
         sigma_a = numpy.dot( s[i-1] , a )
-        obs_term = numpy.dot(s[i-1],numpy.linalg.solve( alpha, s[i-1] ))
+        obs_term = numpy.dot(s[i-1],numpy.linalg.lstsq( alpha, s[i-1] )[0])
         s[i] =s[i-1]+dt*( sigma_a + sigma_a.T + eta2 -obs_term )
     return s
 
@@ -207,7 +213,7 @@ def full_stoc_sigma(sigma0, dt, N, a, eta, alpha, la, NSamples, rands=None):
     for i in xrange(1,N):
         asigmas = numpy.dot( sigmas[i-1], a) 
         nojump = asigmas + asigmas.swapaxes( 1, 2 ) + eta2
-        jump = [numpy.dot(si,numpy.linalg.solve( si + alpha, alpha )) 
+        jump = [numpy.dot(si,numpy.linalg.lstsq( si + alpha, alpha )[0]) 
                     for si in sigmas[i-1]]
         splus1 = numpy.asarray( [ sigmas[i-1]+dt*nojump, jump] )
         sigmas[i] = splus1[ rands[i], range( NSamples ) ]
@@ -269,15 +275,21 @@ if __name__=='__main__':
     full_fs =  numpy.zeros_like( thetas )
     k_cont_fs = numpy.zeros_like( thetas )
     #estimation_eps = numpy.zeros_like(alphas)
-    NSamples = 1000
+    NSamples = 50
 
     radial = lambda t :  numpy.diag([0.0,numpy.tan(t), 0.0, 1.0/numpy.tan(t)])
-    la = numpy.sqrt((2*numpy.pi)**2*numpy.linalg.det(radial(thetas[0])))*phi/(dtheta**2)
-    estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la, N=4 )))
-    mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
-    full_stoc = lambda (n,t) : (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la,NSamples,rands=rands))
-    k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, radial(t), N=4 ) ) ))
-    k_control = lambda (n,t) : (n, kalman_f(s, S, dt, a, eta, radial(t), b, q, R ) )
+    la = numpy.sqrt((2*numpy.pi)**2*pseudo_determinant(
+                                        radial(thetas[0])))*phi/(dtheta**2)
+    estimation = lambda (n,t) :\
+                  (n, numpy.trace( get_eq_eps( a, eta, radial(t), la, N=4 )))
+    mean_field = lambda (n,t) :\
+                  (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
+    full_stoc = lambda (n,t) :\
+                 (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la,NSamples,rands=rands))
+    k_estimation = lambda (n,t) :\
+                 (n, numpy.trace( get_eq_kalman( a, eta, radial(t), N=4 ) ) )
+    k_control = lambda (n,t) :\
+                 (n, kalman_f(s, S, dt, a, eta, radial(t), b, q, R ) )
 
     print 'running '+str(thetas.shape[0])+' runs'
     rands = numpy.random.uniform(size=(N,NSamples))
@@ -303,27 +315,30 @@ if __name__=='__main__':
 
         dview.push({'radial':radial})
         dview.push({'get_eq_eps':get_eq_eps,'d_eps_dt':d_eps_dt,
-                    'get_eq_kalman':get_eq_kalman,'d_eps_kalman':d_eps_kalman})
-        dview.push({'mf_f':mf_f,'full_stoc_f':full_stoc_f,'s':s,'S':S,'a':a,'N':N,'la':la,
-                    'eta':eta,'b':b,'q':q,'R':R,'NSamples':NSamples,'rands':rands,'dt':dt})
-        dview.push({'mf_sigma':mf_sigma,'full_stoc_sigma':full_stoc_sigma,'estimation':estimation,
+                    'get_eq_kalman':get_eq_kalman,
+                    'd_eps_kalman':d_eps_kalman})
+        dview.push({'mf_f':mf_f,'full_stoc_f':full_stoc_f,
+                    's':s,'S':S,'a':a,'N':N,'la':la,
+                    'eta':eta,'b':b,'q':q,'R':R,'NSamples':NSamples,
+                    'rands':rands,'dt':dt})
+        dview.push({'mf_sigma':mf_sigma,
+                    'full_stoc_sigma':full_stoc_sigma,'estimation':estimation,
                     'kalman_sigma':kalman_sigma,'kalman_f':kalman_f})
 
     except:
+        print 'Defaulting to serial evaluation'
         mymap = lambda (f,args): map(f,args)
-    #est_calls = dview.map_async( estimation, args, ordered=False )
-    #mf_calls = dview.map_async( mean_field, args, ordered=False )
-    #full_calls = dview.map_async( full_stoc, args, ordered=False )
     
     est_calls = mymap((estimation, args))
     print "estimation done"
     k_est_calls = mymap((k_estimation, args))
-    print "kalman estimation"
+    print "kalman estimation done"
     mf_calls  = mymap((mean_field, args))
     print "mean field done"
     full_calls = mymap((full_stoc, args))
     print "stochastic done"
     k_control_calls = mymap((k_control, args ))
+    print "kalman control done"
 
     gotten = []
     for n,res in enumerate(k_est_calls):
@@ -362,7 +377,7 @@ if __name__=='__main__':
         n,v = res
         gotten.append(n)
         print 'LQG %d entries in, %d'%(len(gotten),n)
-        k_cont_eps[n] = v
+        k_cont_fs[n] = v
     print 'kalman control is in'
 
     
@@ -392,5 +407,5 @@ if __name__=='__main__':
     plt.figlegend([l1,l2,l3],['estimation','mean field','stochastic'],'upper right')
     plt.savefig('comparison_multi_radial.eps')
 
-    print 'eps-optimal', radial(thetas[epsind])
-    print 'cont-optimal', radial(thetas[indfull])
+    print 'eps-optimal\n', radial(thetas[epsind])
+    print 'cont-optimal\n', radial(thetas[indfull])
