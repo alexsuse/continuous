@@ -268,7 +268,7 @@ if __name__=='__main__':
         args.append((i,t)) 
 
     try:
-        c = Client(profile='local_cluster')
+        c = Client()
         dview = c[:]
 
         with dview.sync_imports():
