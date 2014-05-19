@@ -27,7 +27,7 @@ R = numpy.array([[0.01,0.0,0.0,0.0],
                  [0.0,0.0,0.02,0.0],
                  [0.0,0.0,0.0,0.02]]) #running control cost
 eta = .4*numpy.diag([0.0,1.0,0.0,1.0]) #system noise
-gamma = 0.1
+gamma = 0.8
 a = numpy.array([[0.0,1.0,0.0,0.0],
                  [-gamma**2,-2*gamma,0.0,0.0],
                  [0.0,0.0,0.0,1.0],
@@ -41,6 +41,7 @@ def pseudo_determinant(m):
     det = 1.0
     for i in numpy.diagonal(m):
         if i!=0.0:
+        if i != 0.0:
             det*=i
     return det
 
@@ -275,15 +276,21 @@ if __name__=='__main__':
     full_fs =  numpy.zeros_like( thetas )
     k_cont_fs = numpy.zeros_like( thetas )
     #estimation_eps = numpy.zeros_like(alphas)
-    NSamples = 1000
+    NSamples = 50
 
     radial = lambda t :  numpy.diag([0.0,numpy.tan(t), 0.0, 1.0/numpy.tan(t)])
-    la = numpy.sqrt((2*numpy.pi)**2*pseudo_determinant(radial(thetas[0])))*phi/(dtheta**2)
-    estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la, N=4 )))
-    mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
-    full_stoc = lambda (n,t) : (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la,NSamples,rands=rands))
-    k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, la*radial(t), N=4 ) ) )
-    k_control = lambda (n,t) : (n, kalman_f(s, S, dt, a, eta, la*radial(t), b, q, R ) )
+    la = numpy.sqrt((2*numpy.pi)**2*pseudo_determinant(
+                                        radial(thetas[0])))*phi/(dtheta**2)
+    estimation = lambda (n,t) :\
+                  (n, numpy.trace( get_eq_eps( a, eta, radial(t), la, N=4 )))
+    mean_field = lambda (n,t) :\
+                  (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
+    full_stoc = lambda (n,t) :\
+                 (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la,NSamples,rands=rands))
+    k_estimation = lambda (n,t) :\
+                 (n, numpy.trace( get_eq_kalman( a, eta, radial(t), N=4 ) ) )
+    k_control = lambda (n,t) :\
+                 (n, kalman_f(s, S, dt, a, eta, radial(t), b, q, R ) )
 
     print 'running '+str(thetas.shape[0])+' runs'
     rands = numpy.random.uniform(size=(N,NSamples))
@@ -410,5 +417,5 @@ if __name__=='__main__':
     #plt.figlegend([l1dash, lqg], ['Kalman filtering','LQG Control'], 'right')
     plt.savefig('comparison_multi_radial.eps')
 
-    print 'eps-optimal', radial(thetas[epsind])
-    print 'cont-optimal', radial(thetas[indfull])
+    print 'eps-optimal\n', radial(thetas[epsind])
+    print 'cont-optimal\n', radial(thetas[indfull])
