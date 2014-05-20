@@ -80,4 +80,4 @@ if __name__=='__main__':
     plt.legend()
     plt.show()
     plt.savefig('estimation_uni.png')
-    os.system("mutt -a \"estimation_uni.png\" -s \"Plot\" --recipient=alexsusemihl@gmail.com")
+    os.system("echo \"all done\" | mutt -a \"estimation_uni.png\" -s \"Plot\" -- alexsusemihl@gmail.com")
