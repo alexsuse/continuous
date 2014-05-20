@@ -38,7 +38,7 @@ def full_stoc_sigma(sigma0,dt,N,a,eta,alpha,la,NSamples,rands=None, discard=0):
         sigmas[:,i] = splus1[rands[:,i],range(NSamples)]
     return np.mean(sigmas, axis = 0)
 
-def replica_eps(gamma, eta, alpha, lamb, tol=1e-6):
+def replica_eps(gamma, eta, alpha, lamb, tol=1e-9):
     eps = eta**2/(2.0*gamma)
     U = lamb/(alpha**2+eps)
     phi = (np.sqrt(gamma**2+U*eta**2)-gamma) + lamb*np.log(1.0+eps/alpha**2)-U*eps
@@ -62,7 +62,7 @@ if __name__=='__main__':
     gamma = 0.1
     eta = 1.0
     phi = 0.1
-    N = 100000
+    N = 10000
     dt = 0.0001
     discard = 5*int(1.0/(2*gamma*dt))
     print discard
