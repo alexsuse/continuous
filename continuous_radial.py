@@ -4,6 +4,7 @@ continuous.py -- evaluate the covariance part of the optimal cost-to-go for LQG 
 
 See git repository alexsuse/Thesis for more information.
 """
+import sys
 import numpy
 import matplotlib
 matplotlib.use('Agg')
@@ -18,7 +19,7 @@ Parameters, really ugly, well...
 T = 2
 dt = 0.001
 q = numpy.array([[0.02,0.0],[0.0,0.01]]) #running state cost
-QT = 0.1*numpy.eye(2) #final state cost
+QT = 0.0*q #final state cost
 R = numpy.array([[0.01,0.0],[0.0,0.02]]) #running control cost
 eta = .4*numpy.eye(2) #system noise
 a = -0.1*numpy.eye(2) #system regenerative force
@@ -237,7 +238,7 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.1,numpy.pi/2-0.01,.01)
+    thetas = numpy.arange(0.005,numpy.pi/2-0.005,.005)
 
     #initial sigma value
     s = 2.0*numpy.eye(2)
@@ -374,7 +375,8 @@ if __name__=='__main__':
     ax2.set_xlabel(r'$\theta$')
     
     plt.figlegend([l1,l2,l3,l4,l5],['estimation','kalman filter','mean field','stochastic','LQG control'],'upper right')
-    plt.savefig('comparison_multi_radial.eps')
+    print "Saving figure to "+sys.argv[1]+".png"
+    plt.savefig(sys.argv[1]+'.png',dpi=200)
 
     print 'eps-optimal', radial(thetas[epsind])
     print 'cont-optimal', radial(thetas[indfull])

@@ -10,19 +10,20 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import rc
 import matplotlib.pyplot as plt
+from estimation import full_stoc_sigma
 import estimation as est
 
-T = 2
-dt = 0.001
-q = 0.01
-QT = 0.1
+T = 10
+dt = 0.005
+q = 1.0
+QT = 0.0
 r = 0.1
 eta = 1.0
 a = -0.1
 b = 0.2
-alpha = 0.1
-dtheta = 0.05
-phi = 0.1
+alpha = 0.5
+dtheta = 0.5
+phi = 0.05
 
 def solve_riccatti(N,dt,QT,a,b,q,r):
     s = np.zeros(N)
@@ -60,10 +61,10 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,r)
 
     # alpha values to be considered
-    alphas = np.arange(0.001,20.0,0.1)
+    alphas = np.arange(0.001,10.0,0.05)
 
     # initial value of sigma
-    s = 2.0
+    s = eta**2/(-2*a)
 
     # fs holds mean field costs
     fs = np.zeros_like(alphas)

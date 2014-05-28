@@ -4,6 +4,7 @@ continuous.py -- evaluate the covariance part of the optimal cost-to-go for LQG 
 
 See git repository alexsuse/Thesis for more information.
 """
+import os, sys
 import numpy
 import matplotlib
 matplotlib.use('Agg')
@@ -16,31 +17,30 @@ from IPython.parallel import Client
 Parameters, really ugly, well...
 """
 T = 2
-dt = 0.001
+dt = 0.0003
 q = numpy.array([[0.02,0.0,0.0,0.0],
                  [0.0,0.02,0.0,0.0],
                  [0.0,0.0,0.01,0.0],
                  [0.0,0.0,0.0,0.01]]) #running state cost
 QT = 10*q #final state cost
-R = numpy.array([[0.01,0.0,0.0,0.0],
+R = numpy.array([[0.0,0.0,0.0,0.0],
                  [0.0,0.01,0.0,0.0],
-                 [0.0,0.0,0.02,0.0],
+                 [0.0,0.0,0.0,0.0],
                  [0.0,0.0,0.0,0.02]]) #running control cost
-eta = .4*numpy.diag([0.0,1.0,0.0,1.0]) #system noise
-gamma = 0.8
+eta = .6*numpy.diag([0.0,1.0,0.0,1.0]) #system noise
+gamma = 0.1
 a = numpy.array([[0.0,1.0,0.0,0.0],
                  [-gamma**2,-2*gamma,0.0,0.0],
                  [0.0,0.0,0.0,1.0],
                  [0.0,0.0,-gamma**2,-2*gamma]])#system regenerative force
-b = 0.2*numpy.eye(4) #control constant
+b = 0.5*numpy.diag([0.0,1.0,0.0,1.0]) #control constant
 #alpha = 0.1*numpy.diag([0.0,1.0,0.0,1.0]) #observation noise
 dtheta = 0.5 #neuron spacing
-phi = 0.01 #neuron maximal rate
+phi = 0.1 #neuron maximal rate
 
 def pseudo_determinant(m):
     det = 1.0
     for i in numpy.diagonal(m):
-        if i!=0.0:
         if i != 0.0:
             det*=i
     return det
@@ -64,7 +64,7 @@ def solve_riccatti(N,dt,QT,a,b,q,r):
     for i in range(N-1):
         Sa = numpy.dot( s[N-i-1], a)
         Sb = numpy.dot( s[N-i-1], b)
-        s[N-i-2] = s[N-i-1]+dt*(- numpy.dot( Sb, numpy.linalg.solve( R, Sb.T ) ) + Sa + Sa.T + 0.5 * q ) 
+        s[N-i-2] = s[N-i-1]+dt*(- numpy.dot( Sb, numpy.linalg.lstsq( R, Sb.T )[0] ) + Sa + Sa.T + 0.5 * q ) 
     return s
 
 def kalman_f(sigma0,S,dt,a, eta ,alpha,b,q,r):
@@ -91,7 +91,7 @@ def kalman_f(sigma0,S,dt,a, eta ,alpha,b,q,r):
 
     bs = numpy.dot( S, b)
 
-    integrand = [numpy.dot(bss, numpy.linalg.solve(R, numpy.dot(bss, sigmas[i])))
+    integrand = [numpy.dot(bss, numpy.linalg.lstsq(R, numpy.dot(bss, sigmas[i]))[0])
                   for i,bss in enumerate(bs)]
 
     integral = numpy.trace(numpy.sum(integrand, axis=0))
@@ -124,7 +124,7 @@ def mf_f(sigma0,S,dt,a, eta ,alpha,b,q,r,la):
 
     bs = numpy.dot( S, b)
 
-    integrand = [numpy.dot(bss, numpy.linalg.solve(R, numpy.dot(bss, sigmas[i])))
+    integrand = [numpy.dot(bss, numpy.linalg.lstsq(R, numpy.dot(bss, sigmas[i]))[0])
                   for i,bss in enumerate(bs)]
 
     integral = numpy.trace(numpy.sum(integrand, axis = 0))
@@ -178,7 +178,7 @@ def mf_sigma(sigma0, dt, N, a , eta, alpha, la):
     eta2 = numpy.dot( eta, eta.T )
     for i in xrange(1,N):
         sigma_a = numpy.dot( s[i-1] , a )
-        jump_term = numpy.dot(s[i-1],numpy.linalg.solve( s[i-1] + alpha, s[i-1] ))
+        jump_term = numpy.dot(s[i-1],numpy.linalg.lstsq( s[i-1] + alpha, s[i-1] )[0])
         s[i] =s[i-1]+dt*( sigma_a + sigma_a.T + eta2 -la*jump_term )
     return s
 
@@ -247,7 +247,7 @@ def full_stoc_f(sigma0, S, dt, a, eta, alpha, b, q, r, la, NSamples,rands=None):
    
     bs = numpy.dot( S, b )
 
-    integrand = [numpy.dot(bss, numpy.linalg.solve(R, numpy.dot(bss, sigmas[i])))
+    integrand = [numpy.dot(bss, numpy.linalg.lstsq(R, numpy.dot(bss, sigmas[i]))[0])
                   for i,bss in enumerate(bs)]
     
     integral = numpy.trace(numpy.sum(integrand, axis=0))
@@ -276,9 +276,9 @@ if __name__=='__main__':
     full_fs =  numpy.zeros_like( thetas )
     k_cont_fs = numpy.zeros_like( thetas )
     #estimation_eps = numpy.zeros_like(alphas)
-    NSamples = 50
+    NSamples = 1000
 
-    radial = lambda t :  numpy.diag([0.0,numpy.tan(t), 0.0, 1.0/numpy.tan(t)])
+    radial = lambda t :  0.3*numpy.diag([0.0,numpy.tan(t), 0.0, 1.0/numpy.tan(t)])
     la = numpy.sqrt((2*numpy.pi)**2*pseudo_determinant(
                                         radial(thetas[0])))*phi/(dtheta**2)
     estimation = lambda (n,t) :\
@@ -415,7 +415,13 @@ if __name__=='__main__':
                   ['estimation',
                    'mean field','stochastic'],'upper right')
     #plt.figlegend([l1dash, lqg], ['Kalman filtering','LQG Control'], 'right')
-    plt.savefig('comparison_multi_radial.eps')
+    try:
+        sys.argv[1]
+        name = sys.argv[1]+".eps"
+    except:
+        name = 'comparison_multi_radial.eps'
+    plt.savefig(name)
+    os.system(r'echo "hey" | mutt -a "'+name+r'" -s "plots" -- alexsusemihl@gmail.com')
 
     print 'eps-optimal\n', radial(thetas[epsind])
     print 'cont-optimal\n', radial(thetas[indfull])

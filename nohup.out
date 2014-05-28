@@ -65,3 +65,34 @@ Traceback (most recent call last):
   File "continuous_radial.py", line 106, in mf_sigma
     s[i] =s[i-1]+dt*( sigma_a + sigma_a.T + eta2 -la*jump_term )
 KeyboardInterrupt
+2014-05-22 14:47:11,479.479 [IPClusterStart] Using existing profile dir: u'/home/susemihl/.ipython/profile_default'
+2014-05-22 14:47:11.504 [IPClusterStart] Starting ipcluster with [daemon=False]
+2014-05-22 14:47:11.505 [IPClusterStart] Creating pid file: /home/susemihl/.ipython/profile_default/pid/ipcluster.pid
+2014-05-22 14:47:11.508 [IPClusterStart] Starting Controller with LocalControllerLauncher
+2014-05-22 14:47:12.505 [IPClusterStart] Starting 14 Engines with LocalEngineSetLauncher
+2014-05-22 14:47:16.116 [IPClusterStart] IPython cluster: stopping
+2014-05-22 14:47:16.124 [IPClusterStart] Stopping Engines...
+2014-05-22 14:47:19.131 [IPClusterStart] Removing pid file: /home/susemihl/.ipython/profile_default/pid/ipcluster.pid
+2014-05-22 14:47:25,751.751 [IPClusterStart] Using existing profile dir: u'/home/susemihl/.ipython/profile_default'
+2014-05-22 14:47:25.778 [IPClusterStart] Starting ipcluster with [daemon=False]
+2014-05-22 14:47:25.779 [IPClusterStart] Creating pid file: /home/susemihl/.ipython/profile_default/pid/ipcluster.pid
+2014-05-22 14:47:25.781 [IPClusterStart] Starting Controller with LocalControllerLauncher
+2014-05-22 14:47:26.779 [IPClusterStart] Starting 14 Engines with LocalEngineSetLauncher
+2014-05-22 14:47:28.724 [IPClusterStart] IPython cluster: stopping
+2014-05-22 14:47:28.725 [IPClusterStart] Stopping Engines...
+2014-05-22 14:47:31.727 [IPClusterStart] Removing pid file: /home/susemihl/.ipython/profile_default/pid/ipcluster.pid
+2014-05-22 14:51:29,096.096 [IPClusterStart] Using existing profile dir: u'/home/susemihl/.ipython/profile_default'
+2014-05-22 14:51:29.124 [IPClusterStart] Starting ipcluster with [daemon=False]
+2014-05-22 14:51:29.125 [IPClusterStart] Creating pid file: /home/susemihl/.ipython/profile_default/pid/ipcluster.pid
+2014-05-22 14:51:29.132 [IPClusterStart] Starting Controller with LocalControllerLauncher
+2014-05-22 14:51:30.125 [IPClusterStart] Starting 14 Engines with LocalEngineSetLauncher
+2014-05-22 14:52:01.497 [IPClusterStart] Engines appear to have started successfully
+2014-05-22 17:25:26.957 [IPClusterStart] IPython cluster: stopping
+2014-05-22 17:25:26.957 [IPClusterStart] Stopping Engines...
+2014-05-22 17:25:29.963 [IPClusterStart] Removing pid file: /home/susemihl/.ipython/profile_default/pid/ipcluster.pid
+2014-05-22 17:25:59,855.855 [IPClusterStart] Using existing profile dir: u'/home/susemihl/.ipython/profile_default'
+2014-05-22 17:25:59.882 [IPClusterStart] Starting ipcluster with [daemon=False]
+2014-05-22 17:25:59.883 [IPClusterStart] Creating pid file: /home/susemihl/.ipython/profile_default/pid/ipcluster.pid
+2014-05-22 17:25:59.886 [IPClusterStart] Starting Controller with LocalControllerLauncher
+2014-05-22 17:26:00.883 [IPClusterStart] Starting 14 Engines with LocalEngineSetLauncher
+2014-05-22 17:26:32.257 [IPClusterStart] Engines appear to have started successfully

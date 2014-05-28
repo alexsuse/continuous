@@ -41,16 +41,14 @@ def full_stoc_sigma(sigma0,dt,N,a,eta,alpha,la,NSamples,rands=None, discard=0):
 def replica_eps(gamma, eta, alpha, lamb, tol=1e-9):
     eps = eta**2/(2.0*gamma)
     U = lamb/(alpha**2+eps)
-    phi = (np.sqrt(gamma**2+U*eta**2)-gamma) + lamb*np.log(1.0+eps/alpha**2)-U*eps
-    phi = 0.5*phi
     for i in range(1000):
         eps = eta**2/2 *(1.0/np.sqrt(gamma**2+U*eta**2))
         U = lamb/(alpha**2+eps)
-        phi = (np.sqrt(gamma**2+U*eta**2)-gamma) + lamb*np.log(1.0+eps/alpha**2)-U*eps
-        phi = 0.5*phi
         if np.abs(eps -  eta**2/2 *(1.0/np.sqrt(gamma**2+U*eta**2))) < tol:
             break
-    return alpha**2*(np.exp(2.0*phi/lamb) - 1)
+    phi = (np.sqrt(gamma**2+U*eta**2)-gamma) + lamb*np.log(1.0+eps/alpha**2)-U*eps
+    phi = 0.5*phi
+    return alpha**2*(np.exp(2.0*phi/lamb) - 1.0)
 
 if __name__=='__main__':
 
