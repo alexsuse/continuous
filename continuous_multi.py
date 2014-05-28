@@ -27,7 +27,7 @@ omega = 1.0
 a = numpy.array([[0.0,1.0],[-gamma, -omega**2]])
 #a = -0.1*numpy.eye(2) #system regenerative force
 b = 0.2*numpy.diag([0.0,1.0]) #control constant
-alpha = numpy.dag([0.1,0.0])
+alpha = numpy.diag([0.1,0.0])
 dtheta = 0.05 #neuron spacing
 phi = 2.54 #neuron maximal rate
 

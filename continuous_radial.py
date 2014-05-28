@@ -17,16 +17,27 @@ Parameters, really ugly, well...
 """
 T = 2
 dt = 0.001
-q = numpy.array([[0.02,0.0],[0.0,0.01]]) #running state cost
+q = numpy.array([[0.04,0.0],[0.0,0.0]]) #running state cost
 QT = 0.1*numpy.eye(2) #final state cost
-R = numpy.array([[0.01,0.0],[0.0,0.02]]) #running control cost
-eta = .4*numpy.eye(2) #system noise
-a = -0.1*numpy.eye(2) #system regenerative force
-b = 0.2*numpy.eye(2) #control constant
-alpha = 0.1*numpy.eye(2) #observation noise
-dtheta = 0.5 #neuron spacing
-phi = 0.05 #neuron maximal rate
+R = numpy.array([[0.0,0.0],[0.0,0.04]]) #running control cost
+e =0.4
+eta = numpy.diag([0.0,e])
+gamma = 0.9
+omega = 1.0
+a = numpy.array([[0.0,1.0],[-gamma, -omega**2]])
+#a = -0.1*numpy.eye(2) #system regenerative force
+b = 0.2*numpy.diag([0.0,1.0]) #control constant
+alpha = numpy.dag([0.1,0.0])
+dtheta = 0.05 #neuron spacing
+phi = 2.54 #neuron maximal rate
 
+
+def pseudo_determinant(m):
+    det = 1.0
+    for i in numpy.diagonal(m):
+        if i!=0.0:
+            det*=i
+    return det
 
 def solve_riccatti(N,dt,QT,a,b,q,r):
     """
@@ -47,7 +58,7 @@ def solve_riccatti(N,dt,QT,a,b,q,r):
     for i in range(N-1):
         Sa = numpy.dot( s[N-i-1], a)
         Sb = numpy.dot( s[N-i-1], b.T)
-        s[N-i-2] = s[N-i-1]+dt*(- numpy.dot( Sb, numpy.linalg.solve( R, Sb.T ) ) + Sa + Sa.T + 0.5 * q ) 
+        s[N-i-2] = s[N-i-1]+dt*(- numpy.dot( Sb, numpy.linalg.lstsq( R, Sb.T )[0] ) + Sa + Sa.T + 0.5 * q ) 
     return s
 
 def kalman_f(sigma0,S,dt,a, eta ,alpha,b,q,r):
@@ -74,7 +85,7 @@ def kalman_f(sigma0,S,dt,a, eta ,alpha,b,q,r):
 
     bs = numpy.dot( S, b.T)
 
-    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.solve( R, numpy.dot( bss.T, sigmas[i] ) ) ) for i,bss in enumerate(bs) ]  , axis = 0) )
+    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.lstsq( R, numpy.dot( bss.T, sigmas[i] ) )[0] ) for i,bss in enumerate(bs) ]  , axis = 0) )
     
     f += dt * integral
     
@@ -104,7 +115,7 @@ def mf_f(sigma0,S,dt,a, eta ,alpha,b,q,r,la):
 
     bs = numpy.dot( S, b.T)
 
-    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.solve( R, numpy.dot( bss.T, sigmas[i] ) ) ) for i,bss in enumerate(bs) ]  , axis = 0) )
+    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.lstsq( R, numpy.dot( bss.T, sigmas[i] ) )[0] ) for i,bss in enumerate(bs) ]  , axis = 0) )
     
     f += dt * integral
     
@@ -131,7 +142,7 @@ def kalman_sigma(sigma0, dt, N, a , eta, alpha):
     eta2 = numpy.dot( eta, eta.T )
     for i in xrange(1,N):
         sigma_a = numpy.dot( s[i-1] , a )
-        obs_term = numpy.dot(s[i-1],numpy.linalg.solve( alpha, s[i-1] ))
+        obs_term = numpy.dot(s[i-1],numpy.linalg.lstsq( alpha, s[i-1] )[0])
         s[i] =s[i-1]+dt*( sigma_a + sigma_a.T + eta2 -obs_term )
     return s
 
@@ -155,7 +166,7 @@ def mf_sigma(sigma0, dt, N, a , eta, alpha, la):
     eta2 = numpy.dot( eta, eta.T )
     for i in xrange(1,N):
         sigma_a = numpy.dot( s[i-1] , a )
-        jump_term = numpy.dot(s[i-1],numpy.linalg.solve( s[i-1] + alpha, s[i-1] ))
+        jump_term = numpy.dot(s[i-1],numpy.linalg.lstsq( s[i-1] + alpha, s[i-1] )[0])
         s[i] =s[i-1]+dt*( sigma_a + sigma_a.T + eta2 -la*jump_term )
     return s
 
@@ -191,7 +202,7 @@ def full_stoc_sigma(sigma0, dt, N, a, eta, alpha, la, NSamples, rands=None):
     for i in xrange(1,N):
         asigmas = numpy.dot( sigmas[i-1], a) 
         nojump = asigmas + asigmas.swapaxes( 1, 2 ) + eta2
-        jump = [ numpy.dot(si,numpy.linalg.solve( si + alpha, alpha )) for si in sigmas[i-1]]
+        jump = [ numpy.dot(si,numpy.linalg.lstsq( si + alpha, alpha )[0]) for si in sigmas[i-1]]
         splus1 = numpy.asarray( [ sigmas[i-1]+dt*nojump, jump] )
         sigmas[i] = splus1[ rands[i], range( NSamples ) ]
 
@@ -223,7 +234,7 @@ def full_stoc_f(sigma0, S, dt, a, eta, alpha, b, q, r, la, NSamples,rands=None):
    
     bs = numpy.dot( S, b )
     
-    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.solve( R, numpy.dot( bss.T, sigmas[i] ) ) ) for i,bss in enumerate(bs) ], axis = 0  ) )
+    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.lstsq( R, numpy.dot( bss.T, sigmas[i] ) )[0] ) for i,bss in enumerate(bs) ], axis = 0  ) )
 
     f += dt * integral
     return f
@@ -237,7 +248,7 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.1,numpy.pi/2-0.01,.01)
+    thetas = numpy.arange(0.0,numpy.pi/2-0.01,.01)
 
     #initial sigma value
     s = 2.0*numpy.eye(2)
@@ -251,11 +262,11 @@ if __name__=='__main__':
     #estimation_eps = numpy.zeros_like(alphas)
     NSamples = 1000
 
-    radial = lambda t :  numpy.diag([numpy.tan(t), 1.0/numpy.tan(t)])
-    la = numpy.sqrt((2*numpy.pi)**2*numpy.linalg.det(radial(thetas[0])))*phi/(dtheta**2)
-    estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la )))
-    mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
-    full_stoc = lambda (n,t) : (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la,NSamples,rands=rands))
+    radial = lambda t :  numpy.diag([t,0.0])
+    la = lambda t : numpy.sqrt((2*numpy.pi)**2*pseudodeterminant(radial(t)))*phi/(dtheta**2)
+    estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la(t) )))
+    mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la(t)))
+    full_stoc = lambda (n,t) : (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la(t),NSamples,rands=rands))
     k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, radial(t) ) ) )
     k_control = lambda (n,t) : (n, kalman_f(s, S, dt, a, eta, radial(t), b, q, R ) )
 
