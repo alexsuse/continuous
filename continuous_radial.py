@@ -15,7 +15,7 @@ from IPython.parallel import Client
 """
 Parameters, really ugly, well...
 """
-T = 2
+T = 10
 dt = 0.001
 q = numpy.array([[0.04,0.0],[0.0,0.0]]) #running state cost
 QT = 0.1*numpy.eye(2) #final state cost
@@ -27,7 +27,7 @@ omega = 1.0
 a = numpy.array([[0.0,1.0],[-gamma, -omega**2]])
 #a = -0.1*numpy.eye(2) #system regenerative force
 b = 0.2*numpy.diag([0.0,1.0]) #control constant
-alpha = numpy.dag([0.1,0.0])
+alpha = numpy.diag([0.1,0.0])
 dtheta = 0.05 #neuron spacing
 phi = 2.54 #neuron maximal rate
 
@@ -263,7 +263,7 @@ if __name__=='__main__':
     NSamples = 1000
 
     radial = lambda t :  numpy.diag([t,0.0])
-    la = lambda t : numpy.sqrt((2*numpy.pi)**2*pseudodeterminant(radial(t)))*phi/(dtheta**2)
+    la = lambda t : numpy.sqrt((2*numpy.pi)**2*pseudo_determinant(radial(t)))*phi/(dtheta**2)
     estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la(t) )))
     mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la(t)))
     full_stoc = lambda (n,t) : (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la(t),NSamples,rands=rands))
@@ -292,7 +292,8 @@ if __name__=='__main__':
 
         mymap = lambda (f,args) : dview.map_async(f, args )
 
-        dview.push({'radial':radial})
+        dview.push({'radial':radial,'pseudo_determinant':pseudo_determinant,
+                    'phi':phi,'dtheta':dtheta})
         dview.push({'get_eq_eps':get_eq_eps,'d_eps_dt':d_eps_dt,
                     'get_eq_kalman':get_eq_kalman,'d_eps_kalman':d_eps_kalman})
         dview.push({'mf_f':mf_f,'full_stoc_f':full_stoc_f,'s':s,'S':S,'a':a,'N':N,'la':la,
