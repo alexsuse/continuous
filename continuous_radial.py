@@ -16,7 +16,7 @@ from IPython.parallel import Client
 Parameters, really ugly, well...
 """
 T = 2
-dt = 0.001
+dt = 0.002
 q = numpy.array([[0.4,0.0],[0.0,0.01]]) #running state cost
 QT = 1*numpy.eye(2) #final state cost
 R = numpy.array([[0.01,0.0],[0.0,0.4]]) #running control cost
