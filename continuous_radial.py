@@ -15,21 +15,21 @@ from IPython.parallel import Client
 """
 Parameters, really ugly, well...
 """
-T = 10
+T = 2
 dt = 0.001
-q = numpy.array([[0.04,0.0],[0.0,0.0]]) #running state cost
-QT = 0.1*numpy.eye(2) #final state cost
-R = numpy.array([[0.0,0.0],[0.0,0.04]]) #running control cost
+q = numpy.array([[0.4,0.0],[0.0,0.01]]) #running state cost
+QT = 1*numpy.eye(2) #final state cost
+R = numpy.array([[0.01,0.0],[0.0,0.4]]) #running control cost
 e =0.4
 eta = numpy.diag([0.0,e])
-gamma = 0.9
-omega = 1.0
-a = numpy.array([[0.0,1.0],[-gamma, -omega**2]])
+gamma = 1.4
+omega = 0.8
+a = numpy.array([[0.0,1.0],[-omega**2,-gamma]])
 #a = -0.1*numpy.eye(2) #system regenerative force
-b = 0.2*numpy.diag([0.0,1.0]) #control constant
-alpha = numpy.diag([0.1,0.0])
-dtheta = 0.05 #neuron spacing
-phi = 2.54 #neuron maximal rate
+b = numpy.diag([0.0,1.0]) #control constant
+#alpha = numpy.diag([0.1,0.0])
+dtheta = 0.5 #neuron spacing
+phi = 0.1 #neuron maximal rate
 
 
 def pseudo_determinant(m):
@@ -248,10 +248,10 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.0,numpy.pi/2-0.01,.01)
+    thetas = numpy.arange(0.0,10.0,.1)
 
     #initial sigma value
-    s = 2.0*numpy.eye(2)
+    s =numpy.eye(2)
 
     #preallocating numpy vectors for better performance
     est_eps = numpy.zeros_like( thetas )
@@ -260,14 +260,14 @@ if __name__=='__main__':
     full_fs =  numpy.zeros_like( thetas )
     k_cont_fs = numpy.zeros_like( thetas )
     #estimation_eps = numpy.zeros_like(alphas)
-    NSamples = 1000
+    NSamples = 100
 
     radial = lambda t :  numpy.diag([t,0.0])
-    la = lambda t : numpy.sqrt((2*numpy.pi)**2*pseudo_determinant(radial(t)))*phi/(dtheta**2)
+    la = lambda t : numpy.sqrt((2*numpy.pi)*pseudo_determinant(radial(t)))*phi/dtheta
     estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la(t) )))
     mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la(t)))
     full_stoc = lambda (n,t) : (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la(t),NSamples,rands=rands))
-    k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, radial(t) ) ) )
+    k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, radial(t) ) ))
     k_control = lambda (n,t) : (n, kalman_f(s, S, dt, a, eta, radial(t), b, q, R ) )
 
     print 'running '+str(thetas.shape[0])+' runs'
@@ -303,9 +303,6 @@ if __name__=='__main__':
 
     except:
         mymap = lambda (f,args): map(f,args)
-    #est_calls = dview.map_async( estimation, args, ordered=False )
-    #mf_calls = dview.map_async( mean_field, args, ordered=False )
-    #full_calls = dview.map_async( full_stoc, args, ordered=False )
     
     est_calls = mymap((estimation, args))
     print "estimation done"
@@ -371,7 +368,9 @@ if __name__=='__main__':
     l1,l2 = ax1.plot(thetas, est_eps,'b', thetas, k_est_eps,'k-.' )
     ax1.plot(thetas[epsind],epsmin,'ko',thetas[kind],kmin,'ko')
 
-    l3,l4,l5 = ax2.plot( thetas, fs,'r', thetas, full_fs,'g', thetas, k_cont_fs,'k-.' )
+    l3, = ax2.plot(thetas, fs,'r')
+    l4, = ax2.plot(thetas, full_fs, 'g')
+    l5, = ax2.plot(thetas, k_cont_fs, 'k-.')
     ax2.plot(thetas[mfind],mfmin,'ko',thetas[indfull],fullmin,'ko',thetas[lqgind],lqgmin,'ko')
 
     print "lqg",lqgind,thetas[lqgind],lqgmin
@@ -386,7 +385,9 @@ if __name__=='__main__':
     ax2.set_xlabel(r'$\theta$')
     
     plt.figlegend([l1,l2,l3,l4,l5],['estimation','kalman filter','mean field','stochastic','LQG control'],'upper right')
-    plt.savefig('comparison_multi_radial.eps')
+    fname = "comparison_multi_radial.eps"
+    print "saving fig to " + fname
+    plt.savefig(fname)
 
     print 'eps-optimal', radial(thetas[epsind])
     print 'cont-optimal', radial(thetas[indfull])
