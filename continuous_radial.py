@@ -4,6 +4,7 @@ continuous.py -- evaluate the covariance part of the optimal cost-to-go for LQG 
 
 See git repository alexsuse/Thesis for more information.
 """
+import sys
 import numpy
 import matplotlib
 matplotlib.use('Agg')
@@ -15,21 +16,21 @@ from IPython.parallel import Client
 """
 Parameters, really ugly, well...
 """
-T = 2
-dt = 0.002
+T = 20
+dt = 0.008
 q = numpy.array([[0.4,0.0],[0.0,0.01]]) #running state cost
 QT = 1*numpy.eye(2) #final state cost
 R = numpy.array([[0.01,0.0],[0.0,0.4]]) #running control cost
 e =0.4
 eta = numpy.diag([0.0,e])
 gamma = 1.4
-omega = 0.8
+omega = 4.0
 a = numpy.array([[0.0,1.0],[-omega**2,-gamma]])
 #a = -0.1*numpy.eye(2) #system regenerative force
 b = numpy.diag([0.0,1.0]) #control constant
 #alpha = numpy.diag([0.1,0.0])
-dtheta = 0.5 #neuron spacing
-phi = 0.1 #neuron maximal rate
+dtheta = 0.05 #neuron spacing
+phi = 0.5 #neuron maximal rate
 
 
 def pseudo_determinant(m):
@@ -248,10 +249,10 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.0,10.0,.1)
+    thetas = numpy.arange(0.1,20.0,.2)
 
     #initial sigma value
-    s =numpy.eye(2)
+    s = eta**2*numpy.eye(2)
 
     #preallocating numpy vectors for better performance
     est_eps = numpy.zeros_like( thetas )
@@ -260,7 +261,7 @@ if __name__=='__main__':
     full_fs =  numpy.zeros_like( thetas )
     k_cont_fs = numpy.zeros_like( thetas )
     #estimation_eps = numpy.zeros_like(alphas)
-    NSamples = 100
+    NSamples = 500
 
     radial = lambda t :  numpy.diag([t,0.0])
     la = lambda t : numpy.sqrt((2*numpy.pi)*pseudo_determinant(radial(t)))*phi/dtheta
@@ -385,7 +386,10 @@ if __name__=='__main__':
     ax2.set_xlabel(r'$\theta$')
     
     plt.figlegend([l1,l2,l3,l4,l5],['estimation','kalman filter','mean field','stochastic','LQG control'],'upper right')
-    fname = "comparison_multi_radial.eps"
+    if sys.argv[1]:
+        fname = sys.argv[1]+'.eps'
+    else:
+        fname = "comparison_multi_radial.eps"
     print "saving fig to " + fname
     plt.savefig(fname)
 
