@@ -18,16 +18,16 @@ Parameters, really ugly, well...
 """
 T = 5
 dt = 0.001
-q = numpy.array([[0.4,0.0,0.0,0.0],[0.0,0.0,0.0,0.0],[0.0,0.0,0.1,0.0],[0.0,0.0,0.0,0.0]]) #running state cost
-QT = 0.0*numpy.eye(4) #final state cost
-R = numpy.array([[0.0,0.0,0.0,0.0],[0.0,0.1,0.0,0.0],[0.0,0.0,0.4,0.0],[0.0,0.0,0.0,0.0]]) #running control cost
+q = numpy.array([[0.4,0.0],[0.0,0.0]]) #running state cost
+QT = 0.0*numpy.eye(2) #final state cost
+R = numpy.array([[0.0,0.0],[0.0,0.4]]) #running control cost
 e =0.4
-eta = numpy.diag([0.0,e,0.0,e])
+eta = numpy.diag([0.0,e])
 gamma = 0.4
 omega = 0.8
-a = numpy.array([[0.0,1.0,0.0,0.0],[-omega**2,-gamma,0.0,0.0],[0.0,0.0,0.0,1.0],[0.0,0.0,-omega**2,-gamma]])
+a = numpy.array([[0.0,1.0],[-omega**2,-gamma]])
 #a = -0.1*numpy.eye(2) #system regenerative force
-b = numpy.diag([0.0,1.0,0.0,1.0]) #control constant
+b = numpy.diag([0.0,1.0]) #control constant
 #alpha = numpy.diag([0.1,0.0])
 dtheta = 0.1 #neuron spacing
 phi = 0.5 #neuron maximal rate
@@ -40,7 +40,7 @@ def pseudo_determinant(m):
             det*=i
     return det
 
-def solve_riccatti(N,dt,QT,a,b,q,r,D=2):
+def solve_riccatti(N,dt,QT,a,b,q,r):
     """
     As the name suggests, solve_riccatti
     solves the riccatti matrix equation
@@ -54,7 +54,7 @@ def solve_riccatti(N,dt,QT,a,b,q,r,D=2):
     q    :: instantaneous state cost
     r    :: instantaneous control cost
     """
-    s = numpy.zeros((N,D,D))
+    s = numpy.zeros((N,2,2))
     s[-1] = QT
     Rinv = numpy.linalg.pinv(R)
     for i in range(N-1):
@@ -258,12 +258,13 @@ if __name__=='__main__':
 
     N = int(T/dt)
     #precompute solution to the Ricatti equation    
-    S = solve_riccatti(N,dt,QT,a,b,q,R,D=4)
+    S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.001,numpy.pi/2,0.01)
+    thetas = numpy.arange(0.001,2.0,0.01)
 
     #initial sigma value
+    s = 6.0*numpy.eye(2)
 
     #preallocating numpy vectors for better performance
     est_eps = numpy.zeros_like( thetas )
@@ -274,16 +275,13 @@ if __name__=='__main__':
     #estimation_eps = numpy.zeros_like(alphas)
     NSamples = 1000
 
-    radial = lambda t :  numpy.diag([numpy.tan(t),0.0,1.0/numpy.tan(t),0.0])
+    radial = lambda t :  numpy.diag([t,0.0])
     la = lambda t : numpy.sqrt(2*numpy.pi*pseudo_determinant(radial(t)))*phi/dtheta
-    
-    s = get_eq_eps(a,eta, radial(1.0), la(1.0),N=4)
-    
-    estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la(t), N=4 )))
+    estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la(t) )))
     mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la(t)))
     full_stoc = lambda (n,t) :\
          (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la(t),NSamples,rands=rands))
-    k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, radial(t), N=4)))
+    k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, radial(t) ) ))
     k_control = lambda (n,t) : (n, kalman_f(s, S, dt, a, eta, radial(t), b, q, R ) )
 
     #mf_sigmas = mf_sigma( s, dt, S.size, a, eta, radial(1.0), la(1.0) )
@@ -413,9 +411,6 @@ if __name__=='__main__':
         sys.argv[1]
         fname = sys.argv[1]+'.eps'
     except:
-        fname = "comparison_multi_radial.eps"
+        fname = "figure-1-2.eps"
     print "saving fig to " + fname
     plt.savefig(fname)
-
-    print 'eps-optimal', radial(thetas[epsind])
-    print 'cont-optimal', radial(thetas[indfull])

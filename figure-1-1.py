@@ -16,9 +16,9 @@ from estimation import full_stoc_sigma
 T = 2
 dt = 0.001
 q = 0.1
-QT = 0.01
+QT = 0.001
 r = 0.1
-eta = 1.0
+eta = 0.6
 a = -1
 b = 0.2
 dtheta = 0.5
@@ -74,10 +74,10 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,r)
 
     # alpha values to be considered
-    alphas = np.arange(0.1,5.0,0.1)
+    alphas = np.arange(0.1,5.0,0.02)
 
     # initial value of sigma
-    s = -eta**2/(2*a)
+    s = -10*eta**2/(2*a)
 
     # fs holds mean field costs
     fs = np.zeros_like(alphas)
@@ -91,7 +91,7 @@ if __name__=='__main__':
     lqg_fs = np.zeros_like(alphas)
 
     # number of samples to be used for stoch simulations  
-    Nsamples = 100
+    Nsamples = 4000
     print 'running '+str(alphas.size)+' runs'
 
     # precompute randoms for better visualization
@@ -138,6 +138,6 @@ if __name__=='__main__':
     plt.figlegend([l1,l2,l3,l4,l5],
                   ['estimation','Kalman filter','mean field','stochastic','LQG control'],
                   'upper right')
-    plt.savefig('comparison_uni.eps')
-    plt.savefig('comparison_uni.png')
-    os.system("echo \"file\" | mutt -a \"comparison_uni.png\" -s \"Plot\" -- alexsusemihl@gmail.com")
+    plt.savefig('figure-1-1.eps')
+    plt.savefig('figure-1-1.png')
+    os.system("echo \"file\" | mutt -a \"figure-1-1.png\" -s \"Plot\" -- alexsusemihl@gmail.com")

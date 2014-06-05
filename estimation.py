@@ -10,12 +10,21 @@ import scipy.optimize as opt
 import os
 
 def d_eps_dt(eps,gamma,eta,alpha,lamb):
-	return -2*gamma*eps+eta**2-lamb*eps**2/(alpha**2+eps)
+	return -2*gamma*eps+eta**2-(lamb*eps**2)/(alpha**2+eps)
 	#return -np.dot(gamma,eps)-np.dot(eps,gamma.T)+np.dot(eta.T,eta)-lamb*np.linalg.solve(alpha+eps,np.dot(eps,eps))
 
+def d_eps_kalman(eps, gamma, eta, alpha):
+    return -2*gamma*eps+eta**2-(eps**2)/alpha**2
+
 def get_eq_eps(gamma,eta,alpha,lamb):
-	f = lambda e : d_eps_dt(e,gamma,eta,alpha,lamb)
+	f = lambda e, gamma=gamma, eta=eta, alpha=alpha, lamb=lamb :\
+             d_eps_dt(e,gamma,eta,alpha,lamb)
 	return opt.fsolve(f,1.0)
+
+def get_eq_kalman(gamma,eta,alpha):
+    f = lambda e, gamma=gamma,eta=eta,alpha=alpha :\
+            d_eps_kalman(e,gamma,eta,alpha)
+    return opt.fsolve(f,1.0)
 
 def full_stoc_sigma(sigma0,dt,N,a,eta,alpha,la,NSamples,rands=None, discard=0):
     sigmas = np.zeros((NSamples,N))
@@ -54,30 +63,30 @@ def replica_eps(gamma, eta, alpha, lamb, tol=1e-9):
 
 if __name__=='__main__':
 
-    alphas = np.arange(0.001,4.0,0.1)
+    alphas = np.arange(0.01,4.0,0.1)
     eps = np.zeros_like(alphas)
+    ka_eps = np.zeros_like(alphas)
     rep_eps = np.zeros_like(alphas)
     stoc_eps = np.zeros_like(alphas)
 
-    gamma = 0.1
+    gamma = 1.0
     eta = 1.0
-    phi = 0.1
-    N = 10000
-    dt = 0.0001
-    discard = 5*int(1.0/(2*gamma*dt))
-    print discard
+    phi = 1.0
+    dtheta = 0.5
     for n,alpha in enumerate(alphas):
         print n, alphas.size
-        lamb = phi*np.sqrt(2*np.pi*alpha)
+        lamb = np.sqrt(2*np.pi*alpha**2)*phi/dtheta
         eps[n] = get_eq_eps( gamma, eta, alpha, lamb )
-        rep_eps[n] = replica_eps(gamma, eta, alpha, lamb )
-        stoc_eps[n] =  np.mean(full_stoc_sigma(0.01, dt, N, -gamma,
-                                       eta, alpha, lamb, 1000,
-                                       discard=discard))
+        ka_eps[n] = get_eq_kalman( gamma,eta,alpha)
+    #    rep_eps[n] = replica_eps(gamma, eta, alpha, lamb )
+    #    stoc_eps[n] =  np.mean(full_stoc_sigma(0.01, dt, N, -gamma,
+    #                                   eta, alpha, lamb, 1000,
+    #                                   discard=discard))
     plt.plot( alphas, eps, 'r', label='mean-field')
-    plt.plot( alphas, rep_eps, 'g.-', label='replica')
-    plt.plot( alphas, stoc_eps, 'b.', label='stochastic average')
+    plt.plot( alphas, ka_eps, 'k', label='kalman')
+    #plt.plot( alphas, rep_eps, 'g.-', label='replica')
+    #plt.plot( alphas, stoc_eps, 'b.', label='stochastic average')
     plt.legend()
     plt.show()
     plt.savefig('estimation_uni.png')
-    os.system("mutt -a \"estimation_uni.png\" -s \"Plot\" --recipient=alexsusemihl@gmail.com")
+    os.system("echo \"file\" | mutt -a \"estimation_uni.png\" -s \"Plot\" -- alexsusemihl@gmail.com")
