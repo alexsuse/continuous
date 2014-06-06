@@ -22,11 +22,10 @@ q = numpy.array([[0.02,0.0],[0.0,0.01]]) #running state cost
 QT = 0.0*q #final state cost
 R = numpy.array([[0.02,0.0],[0.0,0.02]]) #running control cost
 eta = .4*numpy.eye(2) #system noise
-a = -0.5*numpy.eye(2) #system regenerative force
+a = -1*numpy.eye(2) #system regenerative force
 b = 0.2*numpy.eye(2) #control constant
-alpha = 0.1*numpy.eye(2) #observation noise
 dtheta = 0.5 #neuron spacing
-phi = 0.05 #neuron maximal rate
+phi = 1.0 #neuron maximal rate
 
 
 def solve_riccatti(N,dt,QT,a,b,q,r):
