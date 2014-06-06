@@ -142,7 +142,7 @@ if __name__=='__main__':
     l6, = ax1.plot(alphas, mi, 'g')
     ax1.plot(alphas[indeps],epsmin,'ko')
 
-    ax1.text(alphas[2],0.45,'a)')
+    ax1.text(alphas[2],0.16,'a)')
 
     l3,l4,=ax2.plot( alphas, fs,'r', alphas, full_fs,'g' )
     l5, = ax2.plot(  alphas, lqg_fs, 'k-.' )

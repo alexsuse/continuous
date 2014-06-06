@@ -121,6 +121,7 @@ if __name__=='__main__':
     l1, = ax1.plot(alphas, estimation_eps,'b')
     l2, = ax1.plot(alphas, kalman_eps, 'k.' )
     ax1.plot(alphas[indeps],epsmin,'ko')
+    ax1.text(thetas[2],0.17,'a)')
 
     l3,l4,=ax2.plot( alphas, fs,'r', alphas, full_fs,'g' )
     l5, = ax2.plot(  alphas, lqg_fs, 'k.' )

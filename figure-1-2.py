@@ -263,7 +263,7 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.001,1.2,0.01)
+    thetas = numpy.arange(0.001,1.2,0.02)
 
     #initial sigma value
     s = 2.0*numpy.eye(2)
@@ -276,7 +276,7 @@ if __name__=='__main__':
     k_cont_fs = numpy.zeros_like( thetas )
     infos = numpy.zeros_like(thetas)
     #estimation_eps = numpy.zeros_like(alphas)
-    NSamples = 2000
+    NSamples = 500
 
     radial = lambda t :  numpy.diag([t,0.0])
     la = lambda t : numpy.sqrt(2*numpy.pi*pseudo_determinant(radial(t)))*phi/dtheta
@@ -286,7 +286,7 @@ if __name__=='__main__':
          (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la(t),NSamples,rands=rands))
     k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, radial(t) ) ))
     k_control = lambda (n,t) : (n, kalman_f(s, S, dt, a, eta, radial(t), b, q, R ) )
-    m_info = lambda (n,t) : (n, mutual_info(dt, N, a, eta, radial(t), la(t), NSamples))
+    m_info = lambda (n,t) : (n, mutual_info(dt, N, a, eta, radial(t), la(t), 5*NSamples))
 
     #mf_sigmas = mf_sigma( s, dt, S.size, a, eta, radial(1.0), la(1.0) )
     #full_sigmas = full_stoc_sigma( s, dt, S.size, a, eta, radial(1.0), la(1.0), 1)
@@ -324,7 +324,7 @@ if __name__=='__main__':
                     'phi':phi,'dtheta':dtheta})
         dview.push({'get_eq_eps':get_eq_eps,'d_eps_dt':d_eps_dt,
                     'get_eq_kalman':get_eq_kalman,'d_eps_kalman':d_eps_kalman,
-                    'm_info':m_info})
+                    'mutual_info':mutual_info})
         dview.push({'mf_f':mf_f,'full_stoc_f':full_stoc_f,'s':s,'S':S,'a':a,'N':N,'la':la,
                     'eta':eta,'b':b,'q':q,'R':R,'NSamples':NSamples,'rands':rands,'dt':dt})
         dview.push({'mf_sigma':mf_sigma,'full_stoc_sigma':full_stoc_sigma,'estimation':estimation,
