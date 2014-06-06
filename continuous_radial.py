@@ -22,9 +22,9 @@ q = numpy.array([[0.02,0.0],[0.0,0.01]]) #running state cost
 QT = 0.0*q #final state cost
 R = numpy.array([[0.02,0.0],[0.0,0.02]]) #running control cost
 eta = .4*numpy.eye(2) #system noise
-a = -1*numpy.eye(2) #system regenerative force
+a = -0.5*numpy.eye(2) #system regenerative force
 b = 0.2*numpy.eye(2) #control constant
-dtheta = 0.5 #neuron spacing
+dtheta = 0.05 #neuron spacing
 phi = 1.0 #neuron maximal rate
 
 
@@ -378,6 +378,7 @@ if __name__=='__main__':
     plt.figlegend([l1,l2,l3,l4,l5],['estimation','kalman filter','mean field','stochastic','LQG control'],'upper right')
     print "Saving figure to "+sys.argv[1]+".png"
     plt.savefig(sys.argv[1]+'.png',dpi=200)
+    plt.savefig(sys.argv[1]+'.eps')
 
     print 'eps-optimal', radial(thetas[epsind])
     print 'cont-optimal', radial(thetas[indfull])
