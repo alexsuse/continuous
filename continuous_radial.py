@@ -251,7 +251,7 @@ if __name__=='__main__':
     #estimation_eps = numpy.zeros_like(alphas)
     NSamples = 500
 
-    radial = lambda t :  numpy.diag([numpy.tan(t), 1.0/numpy.tan(t)])
+    radial = lambda t :  0.1*numpy.diag([numpy.tan(t), 1.0/numpy.tan(t)])
     la = numpy.sqrt((2*numpy.pi)**2*numpy.linalg.det(radial(thetas[0])))*phi/(dtheta**2)
     estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la )))
     mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
@@ -375,7 +375,7 @@ if __name__=='__main__':
     ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
     ax2.set_xlabel(r'$\zeta$')
     
-    plt.figlegend([l1,l2,l3,l4,l5],['estimation','kalman filter','mean field','stochastic','LQG control'],'upper right')
+    plt.figlegend([l1,l2,l3,l4,l5],['Poisson MMSE','Kalman MMSE',r'Mean Field $f$',r'Stochastic $f$',r'LQG $f$'],'upper right')
     print "Saving figure to "+sys.argv[1]+".png"
     plt.savefig(sys.argv[1]+'.png',dpi=200)
     plt.savefig(sys.argv[1]+'.eps')
