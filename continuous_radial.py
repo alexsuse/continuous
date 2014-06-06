@@ -20,9 +20,9 @@ T = 2
 dt = 0.001
 q = numpy.array([[0.02,0.0],[0.0,0.01]]) #running state cost
 QT = 0.0*q #final state cost
-R = numpy.array([[0.01,0.0],[0.0,0.02]]) #running control cost
+R = numpy.array([[0.02,0.0],[0.0,0.02]]) #running control cost
 eta = .4*numpy.eye(2) #system noise
-a = -0.1*numpy.eye(2) #system regenerative force
+a = -1*numpy.eye(2) #system regenerative force
 b = 0.2*numpy.eye(2) #control constant
 alpha = 0.1*numpy.eye(2) #observation noise
 dtheta = 0.5 #neuron spacing
@@ -238,7 +238,7 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.005,numpy.pi/2-0.005,.005)
+    thetas = numpy.arange(0.005,numpy.pi/2,.03)
 
     #initial sigma value
     s = 2.0*numpy.eye(2)
@@ -250,7 +250,7 @@ if __name__=='__main__':
     full_fs =  numpy.zeros_like( thetas )
     k_cont_fs = numpy.zeros_like( thetas )
     #estimation_eps = numpy.zeros_like(alphas)
-    NSamples = 1000
+    NSamples = 500
 
     radial = lambda t :  numpy.diag([numpy.tan(t), 1.0/numpy.tan(t)])
     la = numpy.sqrt((2*numpy.pi)**2*numpy.linalg.det(radial(thetas[0])))*phi/(dtheta**2)
