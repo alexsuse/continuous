@@ -263,7 +263,7 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.001,1.2,0.02)
+    thetas = numpy.arange(0.001,1.2,0.03)
 
     #initial sigma value
     s = 2.0*numpy.eye(2)
@@ -276,7 +276,7 @@ if __name__=='__main__':
     k_cont_fs = numpy.zeros_like( thetas )
     infos = numpy.zeros_like(thetas)
     #estimation_eps = numpy.zeros_like(alphas)
-    NSamples = 500
+    NSamples = 300
 
     radial = lambda t :  numpy.diag([t,0.0])
     la = lambda t : numpy.sqrt(2*numpy.pi*pseudo_determinant(radial(t)))*phi/dtheta
