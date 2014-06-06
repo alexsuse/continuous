@@ -45,7 +45,7 @@ def full_stoc_sigma(sigma0,dt,N,a,eta,alpha,la,NSamples,rands=None, discard=0):
         splus1 = np.asarray([sigmas[:,i-1]+dt*(2*a*sigmas[:,i-1]+eta**2),
                              alpha**2*sigmas[:,i-1]/(alpha**2+sigmas[:,i-1])])
         sigmas[:,i] = splus1[rands[:,i],range(NSamples)]
-    return np.mean(sigmas, axis = 0)
+    return sigmas
 
 def replica_eps(gamma, eta, alpha, lamb, tol=1e-9):
     eps = eta**2/(2.0*gamma)

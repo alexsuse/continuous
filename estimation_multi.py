@@ -36,23 +36,24 @@ def get_eq_eps(gamma,eta,alpha,lamb, N=2):
     return ret
 
 if __name__=='__main__':
-    gamma = 0.5
-    omega = 1.0
-    a = numpy.array([[0.0,1.0],[-omega**2, -gamma]])
-    eta = .40*numpy.diag([0.0,1.0])
+    gamma = 0.4
+    omega = 0.8
+    #a = numpy.array([[1.0,1.0],[-omega**2, -gamma]])
+    a = numpy.array([[0.0,1.0,0.0,0.0],[-omega**2,-gamma,0.0,0.0],[0.0,0.0,0.0,1.0],[0.0,0.0,-omega**2,-gamma]])
+    eta = .40*numpy.diag([0.0,1.0,0.0,1.0])
     dtheta = 0.1
     phi = 0.5
-    sigma = eta**2*numpy.eye(2)
-    thetas = numpy.arange(0.0001,2.0,0.01)
+    sigma = eta**2*numpy.eye(4)
+    thetas = numpy.arange(0.0001,numpy.pi/2,0.05)
 #    eps = numpy.zeros_like(alphas)
     const_eps = numpy.zeros_like(thetas)
     kalman_eps = numpy.zeros_like(thetas)
     for n,i in enumerate(thetas):
-        alpha = numpy.array([[i,0.0],[0.0,0.0]])
-        lamb = phi*numpy.sqrt((2*numpy.pi)*i)/dtheta
-        print n
-        const_eps[n] = numpy.trace( get_eq_eps( a, eta, alpha,lamb ) )
-        kalman_eps[n] = numpy.trace( get_eq_kalman( a, eta, alpha ) )
+        alpha = 0.1*numpy.diag([numpy.tan(i),0.0,1.0/numpy.tan(i),0.0])
+        lamb = phi*numpy.sqrt((2*numpy.pi)**2)*0.1/(dtheta)**2
+        print n, 'of',thetas.size
+        const_eps[n] = numpy.trace( get_eq_eps( a, eta, alpha,lamb,N=4 ) )
+        kalman_eps[n] = numpy.trace( get_eq_kalman( a, eta, alpha ,N=4) )
         """
     for n,i in enumerate(alphas):
         for m,j in enumerate(alphas):
@@ -61,10 +62,10 @@ if __name__=='__main__':
             lamb = phi*numpy.sqrt(2*numpy.pi*numpy.linalg.det(alpha))
             eps[n,m] = numpy.trace(get_eq_eps( a, eta, alpha, lamb ))
 """
-    ax1 = plt.subplot(122)
-    ax2 = plt.subplot(321)
-    ax3 = plt.subplot(323, sharex=ax2)
-    ax4 = plt.subplot(325, sharex=ax2)
+    ax1 = plt.subplot(111)
+    #ax2 = plt.subplot(321)
+    #ax3 = plt.subplot(323, sharex=ax2)
+    #ax4 = plt.subplot(325, sharex=ax2)
 
     ax1.plot( thetas, const_eps )
     ax1.plot( thetas, kalman_eps )

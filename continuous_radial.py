@@ -18,19 +18,21 @@ Parameters, really ugly, well...
 """
 T = 5
 dt = 0.001
-q = numpy.array([[0.4,0.0,0.0,0.0],[0.0,0.0,0.0,0.0],[0.0,0.0,0.1,0.0],[0.0,0.0,0.0,0.0]]) #running state cost
+q = numpy.array([[0.4,0.0,0.0,0.0],[0.0,0.0,0.0,0.0],
+                 [0.0,0.0,0.2,0.0],[0.0,0.0,0.0,0.0]]) #running state cost
 QT = 0.0*numpy.eye(4) #final state cost
-R = numpy.array([[0.0,0.0,0.0,0.0],[0.0,0.1,0.0,0.0],[0.0,0.0,0.4,0.0],[0.0,0.0,0.0,0.0]]) #running control cost
+R = numpy.array([[0.0,0.0,0.0,0.0],[0.0,0.2,0.0,0.0],
+                 [0.0,0.0,0.2,0.0],[0.0,0.0,0.0,0.0]]) #running control cost
 e =0.4
 eta = numpy.diag([0.0,e,0.0,e])
 gamma = 0.4
 omega = 0.8
-a = numpy.array([[0.0,1.0,0.0,0.0],[-omega**2,-gamma,0.0,0.0],[0.0,0.0,0.0,1.0],[0.0,0.0,-omega**2,-gamma]])
-#a = -0.1*numpy.eye(2) #system regenerative force
+a = numpy.array([[0.0,1.0,0.0,0.0],[-omega**2,-gamma,0.0,0.0],
+                 [0.0,0.0,0.0,1.0],[0.0,0.0,-omega**2,-gamma]])
 b = numpy.diag([0.0,1.0,0.0,1.0]) #control constant
 #alpha = numpy.diag([0.1,0.0])
 dtheta = 0.1 #neuron spacing
-phi = 0.5 #neuron maximal rate
+phi = 0.50 #neuron maximal rate
 
 
 def pseudo_determinant(m):
@@ -63,7 +65,7 @@ def solve_riccatti(N,dt,QT,a,b,q,r,D=2):
         s[N-i-2] = s[N-i-1]+dt*(- numpy.dot( Sb, numpy.dot( Rinv, Sb.T )) + Sa + Sa.T + 0.5 * q ) 
     return s
 
-def kalman_f(sigma0,S,dt,a, eta ,alpha,b,q,r):
+def kalman_f(sigma0,S,dt,a, eta ,alpha,b,q,r,D=2):
     """
     mf_f computes the mean-field approximation
     to the variance component of the control cost
@@ -83,7 +85,7 @@ def kalman_f(sigma0,S,dt,a, eta ,alpha,b,q,r):
     """
     f = numpy.trace( numpy.dot( sigma0, S[0] ) )
 
-    sigmas = kalman_sigma( sigma0, dt, S.size, a, eta, alpha )
+    sigmas = kalman_sigma( sigma0, dt, S.size, a, eta, alpha, D=D)
 
     bs = numpy.dot( S, b.T)
     Rinv = numpy.linalg.pinv(R)
@@ -93,7 +95,7 @@ def kalman_f(sigma0,S,dt,a, eta ,alpha,b,q,r):
     
     return f
 
-def mf_f(sigma0,S,dt,a, eta ,alpha,b,q,r,la):
+def mf_f(sigma0,S,dt,a, eta ,alpha,b,q,r,la,D=2):
     """
     mf_f computes the mean-field approximation
     to the variance component of the control cost
@@ -113,7 +115,7 @@ def mf_f(sigma0,S,dt,a, eta ,alpha,b,q,r,la):
     """
     f = numpy.trace( numpy.dot( sigma0, S[0] ) )
 
-    sigmas = mf_sigma( sigma0, dt, S.size, a, eta, alpha, la )
+    sigmas = mf_sigma( sigma0, dt, S.size, a, eta, alpha, la, D=D )
 
     bs = numpy.dot( S, b.T)
     
@@ -125,7 +127,7 @@ def mf_f(sigma0,S,dt,a, eta ,alpha,b,q,r,la):
     return f
 
 
-def kalman_sigma(sigma0, dt, N, a , eta, alpha):
+def kalman_sigma(sigma0, dt, N, a , eta, alpha, D=2):
     """
     mf_sigma computes the expected value of sigma
     under the mean-field approximation given hte parameters.
@@ -140,7 +142,7 @@ def kalman_sigma(sigma0, dt, N, a , eta, alpha):
     alpha  :: width of tuninig functinos
     la     :: population firing rate
     """
-    s = numpy.zeros((N,2,2))
+    s = numpy.zeros((N,D,D))
     s[0] = sigma0
     eta2 = numpy.dot( eta, eta.T )
     invalpha = numpy.linalg.pinv(alpha)
@@ -150,7 +152,7 @@ def kalman_sigma(sigma0, dt, N, a , eta, alpha):
         s[i] =s[i-1]+dt*( sigma_a + sigma_a.T + eta2 -obs_term )
     return s
 
-def mf_sigma(sigma0, dt, N, a , eta, alpha, la):
+def mf_sigma(sigma0, dt, N, a , eta, alpha, la, D=4):
     """
     mf_sigma computes the expected value of sigma
     under the mean-field approximation given hte parameters.
@@ -165,18 +167,18 @@ def mf_sigma(sigma0, dt, N, a , eta, alpha, la):
     alpha  :: width of tuninig functinos
     la     :: population firing rate
     """
-    s = numpy.zeros((N,2,2))
+    s = numpy.zeros((N,D,D))
     s[0] = sigma0
     eta2 = numpy.dot( eta, eta.T )
     alphainv = numpy.linalg.pinv(alpha)
     for i in xrange(1,N):
         sigma_a = numpy.dot( s[i-1] , a )
-        inv = numpy.linalg.inv(numpy.eye(2) + numpy.dot(alphainv, s[i-1]))
+        inv = numpy.linalg.inv(numpy.eye(D) + numpy.dot(alphainv, s[i-1]))
         jump_term = numpy.dot(s[i-1],numpy.dot(alphainv, numpy.dot(s[i-1], inv)))
         s[i] =s[i-1]+dt*( sigma_a + sigma_a.T + eta2 -la*jump_term )
     return s
 
-def full_stoc_sigma(sigma0, dt, N, a, eta, alpha, la, NSamples, rands=None):
+def full_stoc_sigma(sigma0, dt, N, a, eta, alpha, la, NSamples, rands=None, D=2):
     """
     Full stochastic sigma expectation.
     Computes NSamples samples of the covariance dynamics nd return the mean
@@ -191,7 +193,7 @@ def full_stoc_sigma(sigma0, dt, N, a, eta, alpha, la, NSamples, rands=None):
     NSamples:: number of samples
     rands  :: precomputed random numbers (optional)
     """
-    sigmas = numpy.zeros((N, NSamples , 2, 2))
+    sigmas = numpy.zeros((N, NSamples , D, D))
 
     sigmas[0] = sigma0
 
@@ -209,14 +211,14 @@ def full_stoc_sigma(sigma0, dt, N, a, eta, alpha, la, NSamples, rands=None):
     for i in xrange(1,N):
         asigmas = numpy.dot( sigmas[i-1], a) 
         nojump = asigmas + asigmas.swapaxes( 1, 2 ) + eta2
-        jump = [ numpy.dot(si,numpy.linalg.pinv(numpy.eye(2)+numpy.dot(alphainv,si))) for si in sigmas[i-1]]
+        jump = [ numpy.dot(si,numpy.linalg.pinv(numpy.eye(D)+numpy.dot(alphainv,si))) for si in sigmas[i-1]]
         splus1 = numpy.asarray( [ sigmas[i-1]+dt*nojump, jump] )
         sigmas[i] = splus1[ rands[i], range( NSamples ) ]
 
     return numpy.mean( sigmas, axis=1 )
 
 
-def full_stoc_f(sigma0, S, dt, a, eta, alpha, b, q, r, la, NSamples,rands=None):
+def full_stoc_f(sigma0, S, dt, a, eta, alpha, b, q, r, la, NSamples,rands=None,D=2):
     """
     Computes the full stochastic version of covariance
     component of the control cost. It computes the expected
@@ -237,7 +239,7 @@ def full_stoc_f(sigma0, S, dt, a, eta, alpha, b, q, r, la, NSamples,rands=None):
     """
     f = numpy.trace( numpy.dot( sigma0, S[0] ) )
     
-    sigmas = full_stoc_sigma( sigma0, dt, N, a, eta, alpha, la, NSamples, rands )
+    sigmas = full_stoc_sigma( sigma0, dt, N, a, eta, alpha, la, NSamples, rands, D=D)
    
     bs = numpy.dot( S, b )
     
@@ -261,7 +263,7 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R,D=4)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.001,numpy.pi/2,0.01)
+    thetas = numpy.arange(0.001,numpy.pi/2,0.02)
 
     #initial sigma value
 
@@ -274,17 +276,17 @@ if __name__=='__main__':
     #estimation_eps = numpy.zeros_like(alphas)
     NSamples = 1000
 
-    radial = lambda t :  numpy.diag([numpy.tan(t),0.0,1.0/numpy.tan(t),0.0])
-    la = lambda t : numpy.sqrt(2*numpy.pi*pseudo_determinant(radial(t)))*phi/dtheta
+    radial = lambda t :  0.5*numpy.diag([numpy.tan(t),0.0,1.0/numpy.tan(t),0.0])
+    la = lambda t : numpy.sqrt((2*numpy.pi)**2*pseudo_determinant(radial(t)))*phi/(dtheta)**2
     
     s = get_eq_eps(a,eta, radial(1.0), la(1.0),N=4)
     
     estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la(t), N=4 )))
-    mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la(t)))
+    mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la(t),D=4))
     full_stoc = lambda (n,t) :\
-         (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la(t),NSamples,rands=rands))
+         (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la(t),NSamples,rands=rands,D=4))
     k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, radial(t), N=4)))
-    k_control = lambda (n,t) : (n, kalman_f(s, S, dt, a, eta, radial(t), b, q, R ) )
+    k_control = lambda (n,t) : (n, kalman_f(s, S, dt, a, eta, radial(t), b, q, R, D=4))
 
     #mf_sigmas = mf_sigma( s, dt, S.size, a, eta, radial(1.0), la(1.0) )
     #full_sigmas = full_stoc_sigma( s, dt, S.size, a, eta, radial(1.0), la(1.0), 1)
@@ -305,7 +307,7 @@ if __name__=='__main__':
         args.append((i,t)) 
 
     try:
-        c = Client()
+        c = Client(profile='eugenia')
         dview = c[:]
 
         with dview.sync_imports():
@@ -393,6 +395,8 @@ if __name__=='__main__':
 
     l1,l2 = ax1.plot(thetas, est_eps,'b', thetas, k_est_eps,'k-.' )
     ax1.plot(thetas[epsind],epsmin,'ko',thetas[kind],kmin,'ko')
+
+    ax1.text(thetas[2], 0.5, 'b)')
 
     l3, = ax2.plot(thetas, fs,'r')
     l4, = ax2.plot(thetas, full_fs, 'g')
