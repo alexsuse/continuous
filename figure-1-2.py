@@ -342,8 +342,8 @@ if __name__=='__main__':
     full_calls = mymap((full_stoc, args))
     print "stochastic done"
     k_control_calls = mymap((k_control, args ))
-    print "mutual info done"
-    info_calls = mymap((m_info, args))
+#    print "mutual info done"
+#    info_calls = mymap((m_info, args))
     
     gotten = []
     for n,res in enumerate(k_est_calls):
@@ -385,13 +385,13 @@ if __name__=='__main__':
         k_cont_fs[n] = v
     print 'kalman control is in'
 
-    gotten = []
-    for n,res in enumerate(info_calls):
-        n,v = res
-        gotten.append(n)
-        print 'MI %d entries in, %d'%(len(gotten),n)
-        infos[n] = v
-    print 'mutual information is in'
+#    gotten = []
+#    for n,res in enumerate(info_calls):
+#        n,v = res
+#        gotten.append(n)
+#        print 'MI %d entries in, %d'%(len(gotten),n)
+#        infos[n] = v
+#    print 'mutual information is in'
 
     dic = {'poisson MMSE':est_eps,
            'kalman mmse':k_est_eps,
@@ -411,14 +411,14 @@ if __name__=='__main__':
     kmin, kind = (numpy.min(k_est_eps),numpy.argmin(k_est_eps))
     lqgmin, lqgind = (numpy.min(k_cont_fs),numpy.argmin(k_cont_fs))
 
-    infos = infos*numpy.max(est_eps)/numpy.max(infos)
+#    infos = infos*numpy.max(est_eps)/numpy.max(infos)
 
     rc('text',usetex=True)
 
     fig, (ax1,ax2) = plt.subplots(2,1,sharex=True)
 
     l1,l2 = ax1.plot(thetas, est_eps,'b', thetas, k_est_eps,'k-.' )
-    l6, = ax1.plot(thetas, infos, 'g')
+#    l6, = ax1.plot(thetas, infos, 'g')
     ax1.plot(thetas[epsind],epsmin,'ko',thetas[kind],kmin,'ko')
 
     ax1.text(thetas[2],0.4,'b)')
@@ -437,7 +437,7 @@ if __name__=='__main__':
     ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
     ax2.set_xlabel(r'$p$')
     
-    plt.figlegend([l1,l2,l6,l3,l4,l5],['Poisson MMSE','Kalman MMSE','Mutual Information',r'Mean Field $f$',r'Stochastic $f$',r'LQG $f$'],'upper right')
+    plt.figlegend([l1,l2,l3,l4,l5],['Poisson MMSE','Kalman MMSE',r'Mean Field $f$',r'Stochastic $f$',r'LQG $f$'],'upper right')
     try:
         sys.argv[1]
         fname = sys.argv[1]+'.eps'
