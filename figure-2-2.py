@@ -274,7 +274,7 @@ if __name__=='__main__':
     full_fs =  numpy.zeros_like( thetas )
     k_cont_fs = numpy.zeros_like( thetas )
     #estimation_eps = numpy.zeros_like(alphas)
-    NSamples = 1000
+    NSamples = 400
 
     radial = lambda t :  0.5*numpy.diag([numpy.tan(t),0.0,1.0/numpy.tan(t),0.0])
     la = lambda t : numpy.sqrt((2*numpy.pi)**2*pseudo_determinant(radial(t)))*phi/(dtheta)**2
@@ -412,7 +412,7 @@ if __name__=='__main__':
     ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
     ax2.set_xlabel(r'$\zeta$')
     
-    plt.figlegend([l1,l2,l3,l4,l5],['Poisson MMSE','Kalman MMSE',r'Mean Field f',r'Stochastic f',r'LQG f'],'upper right')
+    plt.figlegend([l1,l2,l3,l4,l5],['Poisson MMSE','Kalman MMSE',r'Mean Field $f$',r'Stochastic $f$',r'LQG $f$'],'upper right')
     try:
         sys.argv[1]
         fname = sys.argv[1]+'.eps'

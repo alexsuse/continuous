@@ -251,8 +251,8 @@ def full_stoc_f(sigma0, S, dt, a, eta, alpha, b, q, r, la, NSamples,rands=None):
 
 def mutual_info( dt, N, a, eta, alpha, la, NSamples, rands=None):
     s = get_eq_eps(-a,eta,alpha,0)
-    sigmas = full_stoc_sigma(s, dt,1,a,eta,alpha,la,NSamples,rands,discard=10000)
-    return numpy.log(numpy.linalg.det(s))-numpy.mean([numpy.log(numpy.linalg.det(s)) for s in sigmas])
+    sigmas = full_stoc_sigma(s, dt,N,a,eta,alpha,la,NSamples,rands)
+    return numpy.log(numpy.linalg.det(s))-numpy.mean([numpy.log(numpy.linalg.det(s)) for s in sigmas[-1]])
 
 if __name__=='__main__':
     print __doc__
@@ -437,7 +437,7 @@ if __name__=='__main__':
     ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
     ax2.set_xlabel(r'$p$')
     
-    plt.figlegend([l1,l2,l6,l3,l4,l5],['Poisson MMSE','Kalman MMSE','Mutual Information',r'Mean Field $f$',r'Stochastic $f$',r'LQG $y$'],'upper right')
+    plt.figlegend([l1,l2,l6,l3,l4,l5],['Poisson MMSE','Kalman MMSE','Mutual Information',r'Mean Field $f$',r'Stochastic $f$',r'LQG $f$'],'upper right')
     try:
         sys.argv[1]
         fname = sys.argv[1]+'.eps'
