@@ -23,7 +23,7 @@ q = numpy.array([[0.4,0.0,0.0,0.0],[0.0,0.0,0.0,0.0],
 QT = 0.0*numpy.eye(4) #final state cost
 R = numpy.array([[0.0,0.0,0.0,0.0],[0.0,0.2,0.0,0.0],
                  [0.0,0.0,0.2,0.0],[0.0,0.0,0.0,0.0]]) #running control cost
-e =0.4
+e =0.6
 eta = numpy.diag([0.0,e,0.0,e])
 gamma = 0.4
 omega = 0.8
@@ -412,7 +412,7 @@ if __name__=='__main__':
     ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
     ax2.set_xlabel(r'$\zeta$')
     
-    plt.figlegend([l1,l2,l3,l4,l5],['estimation','kalman filter','mean field','stochastic','LQG control'],'upper right')
+    plt.figlegend([l1,l2,l3,l4,l5],['Poisson MMSE','Kalman MMSE',r'Mean Field f',r'Stochastic f',r'LQG f'],'upper right')
     try:
         sys.argv[1]
         fname = sys.argv[1]+'.eps'

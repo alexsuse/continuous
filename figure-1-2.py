@@ -250,7 +250,7 @@ def full_stoc_f(sigma0, S, dt, a, eta, alpha, b, q, r, la, NSamples,rands=None):
     return f
 
 def mutual_info( dt, N, a, eta, alpha, la, NSamples, rands=None):
-    s = est.get_eq_eps(-a,eta,alpha,0)
+    s = get_eq_eps(-a,eta,alpha,0)
     sigmas = full_stoc_sigma(s, dt,1,a,eta,alpha,la,NSamples,rands,discard=10000)
     return numpy.log(numpy.linalg.det(s))-numpy.mean([numpy.log(numpy.linalg.det(s)) for s in sigmas])
 

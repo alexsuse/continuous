@@ -157,9 +157,7 @@ if __name__=='__main__':
     ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
     ax2.set_xlabel(r'$p$')
     
-    plt.figlegend([l1,l2,l6,l3,l4,l5],
-                  ['estimation','Kalman filter','Mutual Information','mean field','stochastic','LQG control'],
-                  'upper right')
+    plt.figlegend([l1,l2,l6,l3,l4,l5],['Poisson MMSE','Kalman MMSE','Mutual Information',r'Mean Field $f$',r'Stochastic $f$',r'LQG $y$'],'upper right')
     plt.savefig('comparison_uni_low.eps')
     plt.savefig('comparison_uni_low.png')
     os.system("echo \"file\" | mutt -a \"comparison_uni_low.png\" -s \"Plot\" -- alexsusemihl@gmail.com")
