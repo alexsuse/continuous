@@ -360,6 +360,8 @@ if __name__=='__main__':
     l1,l2 = ax1.plot(thetas, est_eps,'b', thetas, k_est_eps,'k-.' )
     ax1.plot(thetas[epsind],epsmin,'ko',thetas[kind],kmin,'ko')
 
+    ax1.text(thetas[2],0.85,'a)')
+
     l3,l4,l5 = ax2.plot( thetas, fs,'r', thetas, full_fs,'g', thetas, k_cont_fs,'k-.' )
     ax2.plot(thetas[mfind],mfmin,'ko',thetas[indfull],fullmin,'ko',thetas[lqgind],lqgmin,'ko')
 
@@ -372,7 +374,7 @@ if __name__=='__main__':
    
     ax1.set_ylabel(r'$MMSE$')
     ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
-    ax2.set_xlabel(r'$\theta$')
+    ax2.set_xlabel(r'$\zeta$')
     
     plt.figlegend([l1,l2,l3,l4,l5],['estimation','kalman filter','mean field','stochastic','LQG control'],'upper right')
     print "Saving figure to "+sys.argv[1]+".png"
