@@ -1,0 +1,6 @@
+
+continuous.py -- evaluate the covariance part of the optimal cost-to-go for LQG in continuous time
+
+See git repository alexsuse/Thesis for more information.
+
+running 50 runs
