@@ -41,7 +41,6 @@ def pseudo_determinant(m):
     det = 1.0
     for i in numpy.diagonal(m):
         if i!=0.0:
-        if i != 0.0:
             det*=i
     return det
 
@@ -264,7 +263,7 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.001,numpy.pi/2,.05)
+    thetas = numpy.arange(0.01,10.0,.1)
 
     #initial sigma value
     s = 2.0*numpy.eye(4)

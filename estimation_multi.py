@@ -13,7 +13,7 @@ def d_eps_dt(eps,a,eta,alpha,lamb):
     return numpy.dot( a, eps) +\
            numpy.dot( eps, a.T) +\
            numpy.dot(eta, eta.T) -\
-           lamb*numpy.dot(eps,numpy.linalg.solve( alpha+eps ,eps))
+           lamb*numpy.dot(eps,numpy.linalg.lstsq( alpha+eps ,eps)[0])
     #return -numpy.dot(gamma,eps)-numpy.dot(eps,gamma.T)+numpy.dot(eta.T,eta)-lamb*numpy.linalg.solve(alpha+eps,numpy.dot(eps,eps))
 
 def d_eps_kalman( eps, a, eta, alpha ):
