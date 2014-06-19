@@ -263,7 +263,7 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R,D=4)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.001,numpy.pi/2,0.02)
+    thetas = numpy.arange(0.0, 10.0,.1)
 
     #initial sigma value
 
