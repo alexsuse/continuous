@@ -100,8 +100,8 @@ def getMaternSample( gamma = 1.0, eta = 1.0, order = 2, alpha = 0.1, phi = 2.0, 
         else:
             plt.rc('text',usetex=True)
             ts = np.arange(0.0,dt*timewindow,dt)
-            ppl.fill_between(ts, mu[:,0]-np.sqrt(sigma[:,0,0]), mu[:,0]+np.sqrt(sigma[:,0,0]),facecolor='red',alpha=0.3,axes = ax)
-            mline, rline, sps, = ppl.plot(ts,mu[:,0],'b:',ts,stim[:,0],'r',times,spikers,'yo',axes=ax)
+            ppl.fill_between(ts, mu[:,0]-np.sqrt(sigma[:,0,0]), mu[:,0]+np.sqrt(sigma[:,0,0]),facecolor='red',alpha=0.3,ax = ax)
+            mline, rline, sps, = ppl.plot(ts,mu[:,0],'b:',ts,stim[:,0],'r',times,spikers,'yo',ax=ax)
             ax.set_ylabel(r'Position [cm]')
 
     return [P,sigmaavg, sigma, sigmamf,sigmaeq]

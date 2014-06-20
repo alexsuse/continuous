@@ -58,13 +58,13 @@ if __name__=='__main__':
             'size':8}
     plt.rc('font',**font)
 
-    ppl.plot( alphas, eps, axes=ax1)
+    ppl.plot( alphas, eps, ax=ax1)
     ax1.set_xlabel(r'$\alpha$')
     ax1.set_ylabel(r'$MMSE$')
     ax1.xaxis.set_ticks(np.arange(0.0,4.0,1.0))
-    map(lambda x : ppl.plot(xs,x,axes=ax2), rates1)
-    map(lambda x : ppl.plot(xs,x,axes=ax3), rates2)
-    map(lambda x : ppl.plot(xs,x,axes=ax4), rates3)
+    lines1 = map(lambda x : ppl.plot(xs,x,ax=ax2), rates1)
+    lines2 = map(lambda x : ppl.plot(xs,x,ax=ax3), rates2)
+    lines3 = map(lambda x : ppl.plot(xs,x,ax=ax4), rates3)
 
     cm.getMaternSample(gamma=gamma,eta=eta,order=1,phi=phi,
                        dtheta=dtheta,plot=True,ax=ax5,alpha=0.3,
@@ -79,9 +79,9 @@ if __name__=='__main__':
     map(lambda x : x.set_ylabel(r'$Rate$'),[ax2,ax3,ax4])
     #map(lambda x : x.set_ylim([-0.01,1.7*phi]),[ax2,ax3,ax4])
     ax2.set_title('Coding Strategies')
-    ppl.legend(ax2,[r'$\alpha=0.3$'])
-    ppl.legend(ax3,[r'$\alpha=1.0$'])
-    ppl.legend(ax4,[r'$\alpha=2.0$'])
+    ppl.legend(ax2,[lines1[0]],[r'$\alpha=0.3$'])
+    ppl.legend(ax3,[lines2[0]],[r'$\alpha=1.0$'])
+    ppl.legend(ax4,[lines3[0]],[r'$\alpha=2.0$'])
     ax4.set_xlabel(r'$x$')
 
     plt.savefig('estimation_uni.png',dpi=400)
