@@ -3,6 +3,7 @@
 finds the optimal encoder for the filtering problem.
 '''
 
+import cPickle as pic
 import numpy as numpy
 import scipy.optimize
 
@@ -81,8 +82,8 @@ if __name__=='__main__':
     phi = 0.5
     sigma = eta[1,1]**2*numpy.eye(2)
 #    eps = numpy.zeros_like(alphas)
-    alphas = numpy.arange(0.0,3.0,0.2)
-    phis = numpy.arange(0.0,2.0,0.2)
+    alphas = numpy.arange(0.0,3.0,0.4)
+    phis = numpy.arange(0.0,2.0,1.0)
     eps = numpy.zeros((alphas.size,phis.size))
     stoc_eps = numpy.zeros((alphas.size,phis.size))
 
@@ -97,7 +98,7 @@ if __name__=='__main__':
         phi = 0.1
         N = 10000
         dt = 0.001
-        discard = 1000
+        discard = 100
         for n,alpha in enumerate(alphas):
             print n, alphas.size
             for m, phi in enumerate(phis):
@@ -106,7 +107,7 @@ if __name__=='__main__':
                 lamb = phi*numpy.sqrt(2*numpy.pi*alpha)
                 eps[n,m] = numpy.trace(get_eq_eps( a, eta, alpha_matrix, lamb ))
                 stoc_eps[n,m] =  numpy.trace(full_stoc_sigma(0.01, dt, N, a,
-                                               eta, alpha_matrix, lamb, 200,
+                                               eta, alpha_matrix, lamb, 100,
                                                discard=discard).mean(axis=0).mean(axis=0))
 
         with open("figure_5_5.pik","w") as fi:
@@ -118,7 +119,7 @@ if __name__=='__main__':
     ppl.mpl.use('Agg')
     from prettyplotlib import plt
     
-    font = {'size':20}
+    font = {'size':16}
     plt.rc('font',**font)
 
     fig, (ax1,ax2) = ppl.subplots(1,2,figsize = (18,8))
@@ -164,6 +165,6 @@ if __name__=='__main__':
     ax2.set_ylabel(r'$\epsilon$')
     ax2.set_title(r'MMSE as a function of $\alpha$')
     ax2.legend()
-    plt.savefig('../figures/figure_5_3.png',dpi=300)
-    plt.savefig('../figures/figure_5_3.eps')
+    plt.savefig('figure_5_5.png',dpi=300)
+    plt.savefig('figure_5_5.eps')
     os.system("echo \"all done\" | mutt -a \"../figures/figure_5_3.eps\" -s \"Plot\" -- alexsusemihl@gmail.com")
