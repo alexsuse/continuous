@@ -3,6 +3,7 @@
 finds the optimal encoder for the filtering problem.
 '''
 
+import cPickle as pic
 import numpy as numpy
 import scipy.optimize
 
@@ -81,18 +82,26 @@ if __name__=='__main__':
     phi = 0.5
     sigma = eta[1,1]**2*numpy.eye(2)
 #    eps = numpy.zeros_like(alphas)
-    alphas = numpy.arange(0.0,3.0,0.2)
-    phis = numpy.arange(0.0,2.0,0.2)
+    dalpha = 0.05
+    alphas = numpy.arange(0.0,2.0,dalpha)
+    dphi = 0.1
+    phis = numpy.arange(0.0,2.0,dphi)
     eps = numpy.zeros((alphas.size,phis.size))
     stoc_eps = numpy.zeros((alphas.size,phis.size))
 
     try:
         dic = pic.load(open("figure_5_5.pik","r"))
         eps = dic['mean_field']
+        print 'eps shape:',eps.shape
         stoc_eps = dic['stochastic']
+        print 'stoceps shape:',stoc_eps.shape
+        phis = dic['phis']
+        print 'phis shape:',phis.shape
+        alphas = dic['alphas']
+        print 'alphas shape:',alphas.shape
         print "Found Pickle, skipping simulation"
-
     except:
+        print "no pickle"
 
         phi = 0.1
         N = 10000
@@ -115,8 +124,9 @@ if __name__=='__main__':
 
     print "Plotting..."
     import prettyplotlib as ppl
-    ppl.mpl.use('Agg')
+    #ppl.mpl.use('Agg')
     from prettyplotlib import plt
+    from prettyplotlib import brewer2mpl
     
     font = {'size':20}
     plt.rc('font',**font)
@@ -164,6 +174,6 @@ if __name__=='__main__':
     ax2.set_ylabel(r'$\epsilon$')
     ax2.set_title(r'MMSE as a function of $\alpha$')
     ax2.legend()
-    plt.savefig('../figures/figure_5_3.png',dpi=300)
-    plt.savefig('../figures/figure_5_3.eps')
-    os.system("echo \"all done\" | mutt -a \"../figures/figure_5_3.eps\" -s \"Plot\" -- alexsusemihl@gmail.com")
+    plt.savefig('~/Dropbox/opper/Thesis/figures/figure_5_5.png',dpi=300)
+    plt.savefig('~/Dropbox/opper/Thesis/figures/figure_5_5.eps')
+    os.system("echo \"all done\" | mutt -a \"~/Dropbox/opper/Thesis/figures/figure_5_5.eps\" -s \"Plot\" -- alexsusemihl@gmail.com")

@@ -11,7 +11,7 @@ from prettyplotlib import plt
 
 cm = ppl.mpl.cm
 
-def getMaternSample( gamma = 1.0, eta = 1.0, order = 2, alpha = 0.1, phi = 2.0, dtheta = 0.2, dt = 0.001, repetitions = 100, timewindow = 10000, spacesteps = 400, plot = False, sample = None,outname = 'OU_coding', ax=None):
+def getMaternSample( gamma = 1.0, eta = 1.0, order = 2, alpha = 0.1, phi = 2.0, dtheta = 0.2, dt = 0.001, repetitions = 100, timewindow = 10000, spacesteps = 400, plot = False, sample = None,outname = 'OU_coding', ax=None, label=''):
     zeta = 2
     L = 0.8
     N = 1
@@ -75,33 +75,43 @@ def getMaternSample( gamma = 1.0, eta = 1.0, order = 2, alpha = 0.1, phi = 2.0, 
     
     for i in range(timewindow):
         P[:,i] = np.exp(-(space-mu[i,0])**2/(2.0*sigma[i,0,0]))/(np.sqrt(2.0*np.pi*sigma[i,0,0]))        
+
     if plot == True:
+
         if ax==None:
             plt.rc('text',usetex=True)
-            fig = plt.figure()
-            ax = fig.add_subplot(2,1,1)
-            ax2 = fig.add_subplot(2,1,2)
+            fig, (ax1,ax2) = ppl.subplots(2,1)
             ts = np.arange(0.0,dt*timewindow,dt)
-            ax.fill_between(ts, mu[:,0]-np.sqrt(sigma[:,0,0]), mu[:,0]+np.sqrt(sigma[:,0,0]),facecolor='red',alpha=0.3)
-            mline, rline, sps, = ax.plot(ts,mu[:,0],'b:',ts,stim[:,0],'r',times,spikers,'yo')
-
-            ax.set_title('Second Order OU Process')
-            ax.set_ylabel(r'Position [cm]')
+            mline, = ppl.plot(ts,mu[:,0],label='Reconstruction',ax=ax1)
+            rline, = ppl.plot( ts,stim[:,0],label='Stimulus',ax=ax1)
+            sps, = ppl.plot( times,spikers,'o',label='Spikes',ax=ax1)
+            ax1.set_title('Second Order OU Process')
+            ax1.set_ylabel(r'Position [cm]')
             #ax.imshow(P,extent=[0,ts[-1],4.0,-4.0],aspect='auto',cmap=cm.gist_yarg)
-            ax.legend([rline,mline,sps],['Stimulus','Reconstruction','Spikes'],'upper right')
-            samp, mfline, avgline, = ax2.plot(ts,sigma[:,0,0],'r:',ts,sigmamf[:,0,0],'b',ts,sigmaavg[:,0,0],'k')
+            leg = ppl.legend(ax1)
+            frame = leg.get_frame()
+            frame.set_alpha(0.7)
+            p = ppl.fill_between(ts, mu[:,0]-np.sqrt(sigma[:,0,0]), mu[:,0]+np.sqrt(sigma[:,0,0]),alpha=0.3,ax=ax1)
+            samp, = ppl.plot(ts,sigma[:,0,0],label='Sample Variance',ax=ax2)
+            mfline, = ppl.plot( ts,sigmamf[:,0,0], label='Mean-Field Variance',ax=ax2)
+            avgline, = ppl.plot( ts,sigmaavg[:,0,0], label='Average Variance (MSE)',ax=ax2)
             ax2.set_title('Dynamics of the Posterior Variance')
             ax2.set_xlabel('Time [s]')
             ax2.set_ylabel(r'Posterior Variance [cm$^2$]')
-            ax2.legend([samp,avgline,mfline],['Sample Variance','Average Variance (MMSE)','Mean-field Variance'],'upper right')       
+            leg = ppl.legend(ax2)
+            frame = leg.get_frame()
+            frame.set_alpha(0.7)
             plt.savefig(outname+'.eps')
+            plt.savefig(outname+'.pdf')
             plt.savefig(outname+'.png',dpi=300)
             plt.savefig(outname+'.tiff')
         else:
             plt.rc('text',usetex=True)
             ts = np.arange(0.0,dt*timewindow,dt)
-            ppl.fill_between(ts, mu[:,0]-np.sqrt(sigma[:,0,0]), mu[:,0]+np.sqrt(sigma[:,0,0]),facecolor='red',alpha=0.3,ax = ax)
-            mline, rline, sps, = ppl.plot(ts,mu[:,0],'b:',ts,stim[:,0],'r',times,spikers,'yo',ax=ax)
+            rline, = ppl.plot( ts,stim[:,0],ax=ax)
+            mline, = ppl.plot(ts,mu[:,0],ax=ax)
+            sps, = ppl.plot(times,spikers,'o',ax=ax)
+            ppl.fill_between(ts, mu[:,0]-np.sqrt(sigma[:,0,0]), mu[:,0]+np.sqrt(sigma[:,0,0]),alpha=0.2,ax = ax)
             ax.set_ylabel(r'Position [cm]')
 
     return [P,sigmaavg, sigma, sigmamf,sigmaeq]
@@ -241,4 +251,4 @@ def getMaternEqVariance( gamma = 1.0, eta = 1.0, order = 2, alpha = 0.2, phi = 1
     return [sigma, sigmamf, sigmanew,  xs, freqs]
 
 if __name__=='__main__':
-    getMaternSample(plot=True,outname='test_coding_plot',repetitions=100)
+    getMaternSample(plot=True,outname='test_coding_plot',repetitions=100,timewindow=10000)
