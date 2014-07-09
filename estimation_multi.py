@@ -82,8 +82,10 @@ if __name__=='__main__':
     phi = 0.5
     sigma = eta[1,1]**2*numpy.eye(2)
 #    eps = numpy.zeros_like(alphas)
-    alphas = numpy.arange(0.0,3.0,0.4)
-    phis = numpy.arange(0.0,2.0,1.0)
+    dalpha = 0.2
+    alphas = numpy.arange(0.01,3.0,dalpha)
+    dphi = 0.3
+    phis = numpy.arange(0.01,2.0,dphi)
     eps = numpy.zeros((alphas.size,phis.size))
     stoc_eps = numpy.zeros((alphas.size,phis.size))
 
@@ -116,9 +118,10 @@ if __name__=='__main__':
 
     print "Plotting..."
     import prettyplotlib as ppl
-    ppl.mpl.use('Agg')
+    #ppl.mpl.use('Agg')
     from prettyplotlib import plt
-    
+    from prettyplotlib import brewer2mpl
+
     font = {'size':16}
     plt.rc('font',**font)
 
