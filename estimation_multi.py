@@ -82,20 +82,26 @@ if __name__=='__main__':
     phi = 0.5
     sigma = eta[1,1]**2*numpy.eye(2)
 #    eps = numpy.zeros_like(alphas)
-    dalpha = 0.2
-    alphas = numpy.arange(0.01,3.0,dalpha)
-    dphi = 0.3
-    phis = numpy.arange(0.01,2.0,dphi)
+    dalpha = 0.05
+    alphas = numpy.arange(0.0,2.0,dalpha)
+    dphi = 0.1
+    phis = numpy.arange(0.0,2.0,dphi)
     eps = numpy.zeros((alphas.size,phis.size))
     stoc_eps = numpy.zeros((alphas.size,phis.size))
 
     try:
         dic = pic.load(open("figure_5_5.pik","r"))
         eps = dic['mean_field']
+        print 'eps shape:',eps.shape
         stoc_eps = dic['stochastic']
+        print 'stoceps shape:',stoc_eps.shape
+        phis = dic['phis']
+        print 'phis shape:',phis.shape
+        alphas = dic['alphas']
+        print 'alphas shape:',alphas.shape
         print "Found Pickle, skipping simulation"
-
     except:
+        print "no pickle"
 
         phi = 0.1
         N = 10000
@@ -104,7 +110,7 @@ if __name__=='__main__':
         for n,alpha in enumerate(alphas):
             print n, alphas.size
             for m, phi in enumerate(phis):
-                print n,m,alphas.size
+                print n,alphas.size,m,phis.size
                 alpha_matrix = numpy.diag([alpha,0.0])
                 lamb = phi*numpy.sqrt(2*numpy.pi*alpha)
                 eps[n,m] = numpy.trace(get_eq_eps( a, eta, alpha_matrix, lamb ))
@@ -121,8 +127,8 @@ if __name__=='__main__':
     #ppl.mpl.use('Agg')
     from prettyplotlib import plt
     from prettyplotlib import brewer2mpl
-
-    font = {'size':16}
+    
+    font = {'size':20}
     plt.rc('font',**font)
 
     fig, (ax1,ax2) = ppl.subplots(1,2,figsize = (18,8))
@@ -168,6 +174,6 @@ if __name__=='__main__':
     ax2.set_ylabel(r'$\epsilon$')
     ax2.set_title(r'MMSE as a function of $\alpha$')
     ax2.legend()
-    plt.savefig('figure_5_5.png',dpi=300)
-    plt.savefig('figure_5_5.eps')
-    os.system("echo \"all done\" | mutt -a \"../figures/figure_5_3.eps\" -s \"Plot\" -- alexsusemihl@gmail.com")
+    plt.savefig('~/Dropbox/opper/Thesis/figures/figure_5_5.png',dpi=300)
+    plt.savefig('~/Dropbox/opper/Thesis/figures/figure_5_5.eps')
+    os.system("echo \"all done\" | mutt -a \"~/Dropbox/opper/Thesis/figures/figure_5_5.eps\" -s \"Plot\" -- alexsusemihl@gmail.com")

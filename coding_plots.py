@@ -45,24 +45,25 @@ if __name__=='__main__':
 
     plt.rcParams['text.usetex']=True
 
-    ax1.plot( alphas, eps )
+    ppl.plot( alphas, eps, ax=ax1 )
     ax1.set_xlabel(r'$\alpha$')
     ax1.set_ylabel(r'$MMSE$')
-    map(lambda x : ax2.plot(xs,x), rates1)
-    map(lambda x : ax3.plot(xs,x), rates2)
-    map(lambda x : ax4.plot(xs,x), rates3)
+    map(lambda x : ppl.plot(xs,x, ax=ax2), rates1)
+    map(lambda x : ppl.plot(xs,x, ax=ax3), rates2)
+    map(lambda x : ppl.plot(xs,x, ax=ax4), rates3)
 
-    cm.getMaternSample(gamma=gamma,eta=eta,order=1,phi=phi,dtheta=dtheta,plot=True,ax=ax5,alpha=0.3, timewindow=20000)
-    cm.getMaternSample(gamma=gamma,eta=eta,order=1,phi=phi,dtheta=dtheta,plot=True,ax=ax6,alpha=1.0, timewindow=20000)
-    cm.getMaternSample(gamma=gamma,eta=eta,order=1,phi=phi,dtheta=dtheta,plot=True,ax=ax7,alpha=2.0, timewindow=20000)
+    cm.getMaternSample(gamma=gamma,eta=eta,order=1,phi=phi,dtheta=dtheta,plot=True,ax=ax5,alpha=0.3, timewindow=20000, label=r'$\alpha=0.3$')
+    cm.getMaternSample(gamma=gamma,eta=eta,order=1,phi=phi,dtheta=dtheta,plot=True,ax=ax6,alpha=1.0, timewindow=20000, label=r'$\alpha=1.0$')
+    cm.getMaternSample(gamma=gamma,eta=eta,order=1,phi=phi,dtheta=dtheta,plot=True,ax=ax7,alpha=2.0, timewindow=20000, label=r'$\alpha=2.0$')
 
     map(lambda x : x.set_ylabel(r'$Rate$'),[ax2,ax3,ax4])
     map(lambda x : x.set_ylim([-0.01,1.7*phi]),[ax2,ax3,ax4])
     ax2.set_title('Coding Strategies')
-    ax2.legend([r'$\alpha=0.3$'])
-    ax3.legend([r'$\alpha=1.0$'])
-    ax4.legend([r'$\alpha=2.0$'])
+   # ax2.legend([r'$\alpha=0.3$'])
+   # ax3.legend([r'$\alpha=1.0$'])
+   # ax4.legend([r'$\alpha=2.0$'])
     ax4.set_xlabel(r'$x$')
 
+    ppl.plot(xs,rates1[0],label=r'$\alpha=0.3$',ax=ax2)
     plt.savefig('estimation_uni.png',dpi=300)
     plt.savefig('estimation_uni.eps')
