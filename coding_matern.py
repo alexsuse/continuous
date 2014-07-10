@@ -11,7 +11,7 @@ from prettyplotlib import plt
 
 cm = ppl.mpl.cm
 
-def getMaternSample( gamma = 1.0, eta = 1.0, order = 2, alpha = 0.1, phi = 2.0, dtheta = 0.2, dt = 0.001, repetitions = 100, timewindow = 10000, spacesteps = 400, plot = False, sample = None,outname = 'OU_coding', ax=None, label=''):
+def getMaternSample( gamma = 1.0, eta = 1.0, order = 2, alpha = 0.1, phi = 1.0, dtheta = 0.2, dt = 0.001, repetitions = 100, timewindow = 10000, spacesteps = 400, plot = False, sample = None,outname = 'OU_coding', ax=None, label=''):
     zeta = 2
     L = 0.8
     N = 1
@@ -36,6 +36,8 @@ def getMaternSample( gamma = 1.0, eta = 1.0, order = 2, alpha = 0.1, phi = 2.0, 
     sigmaeq = np.zeros((timewindow,order,order))
     sigmamf = np.zeros((timewindow,order,order))
     sigmaeq[-1,:,:] = 0.001*np.eye(order)
+    for i in range(timewindow):
+        sigmaeq[i,:,:] = sigmaeq[i-1,:,:] - dt*(np.dot(gam,sigmaeq[i-1,:,:])+np.dot(sigmaeq[i-1,:,:],gam.T)-et)
     for i in range(timewindow):
         sigmaeq[i,:,:] = sigmaeq[i-1,:,:] - dt*(np.dot(gam,sigmaeq[i-1,:,:])+np.dot(sigmaeq[i-1,:,:],gam.T)-et)
     sigmamf[-1,:,:] = sigmaeq[-1,:,:]
@@ -90,21 +92,22 @@ def getMaternSample( gamma = 1.0, eta = 1.0, order = 2, alpha = 0.1, phi = 2.0, 
             #ax.imshow(P,extent=[0,ts[-1],4.0,-4.0],aspect='auto',cmap=cm.gist_yarg)
             leg = ppl.legend(ax1)
             frame = leg.get_frame()
-            frame.set_alpha(0.7)
+            frame.set_alpha(0.6)
             p = ppl.fill_between(ts, mu[:,0]-np.sqrt(sigma[:,0,0]), mu[:,0]+np.sqrt(sigma[:,0,0]),alpha=0.3,ax=ax1)
             samp, = ppl.plot(ts,sigma[:,0,0],label='Sample Variance',ax=ax2)
             mfline, = ppl.plot( ts,sigmamf[:,0,0], label='Mean-Field Variance',ax=ax2)
             avgline, = ppl.plot( ts,sigmaavg[:,0,0], label='Average Variance (MSE)',ax=ax2)
+            eqline, = ppl.plot(ts, sigmaeq[:,0,0],label='Stationary Variance',ax=ax2)
             ax2.set_title('Dynamics of the Posterior Variance')
             ax2.set_xlabel('Time [s]')
             ax2.set_ylabel(r'Posterior Variance [cm$^2$]')
+            ax2.set_ylim([-0.01,0.32])
             leg = ppl.legend(ax2)
             frame = leg.get_frame()
-            frame.set_alpha(0.7)
+            frame.set_alpha(0.6)
             plt.savefig(outname+'.eps')
             plt.savefig(outname+'.pdf')
             plt.savefig(outname+'.png',dpi=300)
-            plt.savefig(outname+'.tiff')
         else:
             plt.rc('text',usetex=True)
             ts = np.arange(0.0,dt*timewindow,dt)

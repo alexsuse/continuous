@@ -37,7 +37,7 @@ def get_eq_eps(gamma,eta,alpha,lamb, N=2):
 def full_stoc_sigma(sigma0,dt,N,a,eta,alpha,la,NSamples,rands=None, discard=0,D=2):
     sigmas = numpy.zeros((NSamples,N,D,D))
     inva = numpy.linalg.pinv(alpha)
-    sigmas[:,0] = sigma0
+    sigmas[:,0] = sigma
     eta2 = numpy.dot(eta,eta.T)
 
     if rands==None:
@@ -104,9 +104,9 @@ if __name__=='__main__':
         print "no pickle"
 
         phi = 0.1
-        N = 10000
+        N = 100000
         dt = 0.001
-        discard = 100
+        discard = 1000
         for n,alpha in enumerate(alphas):
             print n, alphas.size
             for m, phi in enumerate(phis):
@@ -115,7 +115,7 @@ if __name__=='__main__':
                 lamb = phi*numpy.sqrt(2*numpy.pi*alpha)
                 eps[n,m] = numpy.trace(get_eq_eps( a, eta, alpha_matrix, lamb ))
                 stoc_eps[n,m] =  numpy.trace(full_stoc_sigma(0.01, dt, N, a,
-                                               eta, alpha_matrix, lamb, 100,
+                                               eta, alpha_matrix, lamb, 10,
                                                discard=discard).mean(axis=0).mean(axis=0))
 
         with open("figure_5_5.pik","w") as fi:
@@ -128,17 +128,17 @@ if __name__=='__main__':
     from prettyplotlib import plt
     from prettyplotlib import brewer2mpl
     
-    font = {'size':20}
+    font = {'size':10}
     plt.rc('font',**font)
 
-    fig, (ax1,ax2) = ppl.subplots(1,2,figsize = (18,8))
+    fig, (ax1,ax2) = ppl.subplots(1,2,figsize = (9,4))
     
     alphas2,phis2 = numpy.meshgrid(numpy.arange(alphas.min(),alphas.max()+dalpha,dalpha)-dalpha/2,
                                 numpy.arange(phis.min(),phis.max()+dphi,dphi)-dphi/2)
 
     yellorred = brewer2mpl.get_map('YlOrRd','Sequential',9).mpl_colormap
 
-    p = ppl.pcolormesh(fig,ax1,alphas2,phis2,eps.T,cmap = yellorred)
+    p = ppl.pcolormesh(fig,ax1,alphas2,phis2,eps.T)
     ax1.axis([alphas2.min(),alphas2.max(),phis2.min(),phis2.max()])
 
     #xticks = numpy.arange(alphas.min(),alphas.max(),0.5)
@@ -158,13 +158,13 @@ if __name__=='__main__':
     ax1.set_ylabel(r'$\phi$')
     ax1.set_title(r'MMSE ($\epsilon$)')
 
-    ppl.plot( alphas - 0.001, eps[:,1], label=r'$\phi = '+ str(phis[1]-0.001) + r'$',axes=ax2)
+    ppl.plot( alphas - 0.001, eps[:,1], label=r'$\phi = '+ str(phis[1]) + r'$',axes=ax2)
     ppl.plot( alphas[numpy.argmin(eps[:,1])] - 0.001, numpy.min(eps[:,1]), 'bo',axes=ax2)
-    ppl.plot( alphas - 0.001, eps[:,2], label=r'$\phi = '+ str(phis[2]-0.001) + r'$',axes=ax2)
+    ppl.plot( alphas - 0.001, eps[:,2], label=r'$\phi = '+ str(phis[2]) + r'$',axes=ax2)
     ppl.plot( alphas[numpy.argmin(eps[:,2])] - 0.001, numpy.min(eps[:,2]), 'bo',axes=ax2)
-    ppl.plot( alphas - 0.001, eps[:,3], label=r'$\phi = '+ str(phis[3]-0.001) + r'$',axes=ax2)
+    ppl.plot( alphas - 0.001, eps[:,3], label=r'$\phi = '+ str(phis[3]) + r'$',axes=ax2)
     ppl.plot( alphas[numpy.argmin(eps[:,3])] - 0.001, numpy.min(eps[:,3]), 'bo',axes=ax2)
-    ppl.plot( alphas - 0.001, eps[:,4], label=r'$\phi = '+ str(phis[4]-0.001) + r'$',axes=ax2)
+    ppl.plot( alphas - 0.001, eps[:,4], label=r'$\phi = '+ str(phis[4]) + r'$',axes=ax2)
     ppl.plot( alphas[numpy.argmin(eps[:,4])] - 0.001, numpy.min(eps[:,4]), 'bo',axes=ax2)
     ppl.plot( alphas - 0.001, stoc_eps[:,1], '-.', axes=ax2)
     ppl.plot( alphas - 0.001, stoc_eps[:,2], '-.', axes=ax2)
@@ -174,6 +174,7 @@ if __name__=='__main__':
     ax2.set_ylabel(r'$\epsilon$')
     ax2.set_title(r'MMSE as a function of $\alpha$')
     ax2.legend()
-    plt.savefig('~/Dropbox/opper/Thesis/figures/figure_5_5.png',dpi=300)
-    plt.savefig('~/Dropbox/opper/Thesis/figures/figure_5_5.eps')
+    plt.savefig('figure_5_5.png',dpi=300)
+    plt.savefig('figure_5_5.pdf')
+    plt.savefig('figure_5_5.eps')
     os.system("echo \"all done\" | mutt -a \"~/Dropbox/opper/Thesis/figures/figure_5_5.eps\" -s \"Plot\" -- alexsusemihl@gmail.com")
