@@ -1,11 +1,20 @@
 
 import cPickle as pic
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+#import matplotlib
+#matplotlib.use('Agg')
+#import matplotlib.pyplot as plt
+import sys
 
-from matplotlib import rc
+#from matplotlib import rc
+
+import prettyplotlib as ppl
+from prettyplotlib import plt
+
+try:
+    filename = sys.argv[1]
+except:
+    filename = 'figure-1-1.pik'
 
 with open("figure-1-1.pik","r") as f:
     dic = pic.load(f)
@@ -21,24 +30,28 @@ with open("figure-1-1.pik","r") as f:
 fsmin,indfs = (np.min(fs),np.argmin(fs))
 # find minimum of stoch cost
 fullmin,indfull = (np.min(full_fs),np.argmin(full_fs))
-rc('text',usetex='true')
+#rc('text',usetex='true')
 # find minimum
 epsmin,indeps = (np.min(estimation_eps),np.argmin(estimation_eps))
 # plot it up
+print mi
 mi = mi*estimation_eps[0]/np.max(mi)
+print mi
 
-fig, (ax1,ax2) = plt.subplots(2,1,sharex=True)
+fig, (ax1,ax2) = ppl.subplots(2,1,sharex=True)
 
-l1, = ax1.plot(alphas, estimation_eps,'b')
-l2, = ax1.plot(alphas, kalman_eps, 'k-.' )
-l6, = ax1.plot(alphas, mi, 'g')
-ax1.plot(alphas[indeps],epsmin,'ko')
+l1, = ppl.plot(alphas, estimation_eps,label='Point Process Filtering',ax=ax1)
+l2, = ppl.plot(alphas, kalman_eps, '-.',label='Kalman Filtering',ax=ax1 )
+l6, = ppl.plot(alphas, mi,label='Mutual Information',ax=ax1)
+ppl.plot(alphas[indeps],epsmin,'o',color=l1.get_color(),ax=ax1)
 
-ax1.text(alphas[2],0.16,'a)')
+#ax1.text(alphas[2],0.16,'a)')
 
-l3,l4,=ax2.plot( alphas, fs,'r', alphas, full_fs,'g' )
-l5, = ax2.plot(  alphas, lqg_fs, 'k-.' )
-ax2.plot(alphas[indfs],fsmin,'ko',alphas[indfull],fullmin,'ko')
+l3,=ppl.plot( alphas, fs, label='Point Process Control (MF)',ax=ax2)
+l4, = ppl.plot(alphas, full_fs, label='Point Process Control (Simulated)',ax=ax2 )
+l5, = ppl.plot(  alphas, lqg_fs, '-.', label='LQG Control', ax=ax2 )
+ppl.plot(alphas[indfs],fsmin,'o',color=l3.get_color(),ax=ax2)
+ppl.plot(alphas[indfull],fullmin,'o',color=l4.get_color(),ax=ax2)
 
 ax1.spines['bottom'].set_visible(False)
 ax2.spines['top'].set_visible(False)
@@ -49,8 +62,11 @@ ax1.set_ylabel(r'$MMSE$')
 ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
 ax2.set_xlabel(r'$p$')
 
-plt.figlegend([l1,l2,l6,l3,l4,l5],
-              ['estimation','Kalman filter','Mutual Information','mean field','stochastic','LQG control'],
-              'upper right')
-plt.savefig('comparison_uni_low.eps')
+ppl.legend(ax1,loc=4).get_frame().set_alpha(0.7)
+ppl.legend(ax2,loc=4).get_frame().set_alpha(0.7)
+
+#plt.figlegend([l1,l2,l6,l3,l4,l5],
+#              ['estimation','Kalman filter','Mutual Information','mean field','stochastic','LQG control'],
+#              'upper right')
+plt.savefig('comparison_uni_low.pdf')
 plt.savefig('comparison_uni_low.png')

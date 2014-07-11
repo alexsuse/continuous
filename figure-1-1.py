@@ -6,10 +6,12 @@ See git repository alexsuse/Thesis for more information.
 """
 import os
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib import rc
-import matplotlib.pyplot as plt
+#import matplotlib
+#matplotlib.use('Agg')
+#from matplotlib import rc
+#import matplotlib.pyplot as plt
+import prettyplotlib as ppl
+from prettyplotlib import plt
 import estimation as est
 from estimation import full_stoc_sigma
 
@@ -118,14 +120,19 @@ if __name__=='__main__':
 
     fig, (ax1,ax2) = plt.subplots(2,1,sharex=True)
 
-    l1, = ax1.plot(alphas, estimation_eps,'b')
-    l2, = ax1.plot(alphas, kalman_eps, 'k.' )
-    ax1.plot(alphas[indeps],epsmin,'ko')
-    ax1.text(thetas[2],0.17,'a)')
+    l1, = ppl.plot(alphas, estimation_eps,label='Point Process Estimation',ax=ax1)
+    l2, = ppl.plot(alphas, kalman_eps, '.-',label='Kalman Filtering',ax=ax1 )
+    ppl.plot(alphas[indeps],epsmin,'o',color = l1.get_color(),ax=ax1)
+    #ppl.text(thetas[2],0.17,'a)')
+    ppl.legend(ax1).get_frame().set_alpha(0.7)
 
-    l3,l4,=ax2.plot( alphas, fs,'r', alphas, full_fs,'g' )
-    l5, = ax2.plot(  alphas, lqg_fs, 'k.' )
-    ax2.plot(alphas[indfs],fsmin,'ko',alphas[indfull],fullmin,'ko')
+    l3,=ax2.plot( alphas, fs,label='Point Process Control (MF)',ax=ax2)
+    l4,=ax2.plot( alphas, full_fs,label='Point Process Control (Simulation)',ax=ax2 )
+    l5,=ax2.plot(  alphas, lqg_fs, '.-',label='LQG Control',ax=ax2 )
+    ppl.plot(alphas[indfs],fsmin,'o',color=l3.get_color())
+    ppl.plot(alphas[indfull],fullmin,'o',color=l4.get_color())
+
+    ppl.legend(ax2).get_frame().set_alpha(0.7)
 
     ax1.spines['bottom'].set_visible(False)
     ax2.spines['top'].set_visible(False)
@@ -136,9 +143,9 @@ if __name__=='__main__':
     ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
     ax2.set_xlabel(r'$p$')
     
-    plt.figlegend([l1,l2,l3,l4,l5],
-                  ['estimation','Kalman filter','mean field','stochastic','LQG control'],
-                  'upper right')
-    plt.savefig('figure-1-1.eps')
+    #plt.figlegend([l1,l2,l3,l4,l5],
+    #               ['estimation','Kalman filter','mean field','stochastic','LQG control'],
+    #               'upper right')
+    plt.savefig('figure-1-1.pdf')
     plt.savefig('figure-1-1.png')
     os.system("echo \"file\" | mutt -a \"figure-1-1.png\" -s \"Plot\" -- alexsusemihl@gmail.com")

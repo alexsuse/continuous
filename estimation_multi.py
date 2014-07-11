@@ -138,8 +138,9 @@ if __name__=='__main__':
 
     yellorred = brewer2mpl.get_map('YlOrRd','Sequential',9).mpl_colormap
 
-    p = ppl.pcolormesh(fig,ax1,alphas2,phis2,eps.T)
+    p = ax1.pcolormesh(alphas2,phis2,eps.T,cmap=yellorred)
     ax1.axis([alphas2.min(),alphas2.max(),phis2.min(),phis2.max()])
+    p.set_clim(vmin = eps.min(), vmax = eps.max())
 
     #xticks = numpy.arange(alphas.min(),alphas.max(),0.5)
     #xlabels = numpy.arange(alphas.min(),alphas.max(),0.5)-alphas.min()
@@ -158,22 +159,28 @@ if __name__=='__main__':
     ax1.set_ylabel(r'$\phi$')
     ax1.set_title(r'MMSE ($\epsilon$)')
 
-    ppl.plot( alphas - 0.001, eps[:,1], label=r'$\phi = '+ str(phis[1]) + r'$',axes=ax2)
-    ppl.plot( alphas[numpy.argmin(eps[:,1])] - 0.001, numpy.min(eps[:,1]), 'bo',axes=ax2)
-    ppl.plot( alphas - 0.001, eps[:,2], label=r'$\phi = '+ str(phis[2]) + r'$',axes=ax2)
-    ppl.plot( alphas[numpy.argmin(eps[:,2])] - 0.001, numpy.min(eps[:,2]), 'bo',axes=ax2)
-    ppl.plot( alphas - 0.001, eps[:,3], label=r'$\phi = '+ str(phis[3]) + r'$',axes=ax2)
-    ppl.plot( alphas[numpy.argmin(eps[:,3])] - 0.001, numpy.min(eps[:,3]), 'bo',axes=ax2)
-    ppl.plot( alphas - 0.001, eps[:,4], label=r'$\phi = '+ str(phis[4]) + r'$',axes=ax2)
-    ppl.plot( alphas[numpy.argmin(eps[:,4])] - 0.001, numpy.min(eps[:,4]), 'bo',axes=ax2)
-    ppl.plot( alphas - 0.001, stoc_eps[:,1], '-.', axes=ax2)
-    ppl.plot( alphas - 0.001, stoc_eps[:,2], '-.', axes=ax2)
-    ppl.plot( alphas - 0.001, stoc_eps[:,3], '-.', axes=ax2)
-    ppl.plot( alphas - 0.001, stoc_eps[:,4], '-.', axes=ax2)
+    l1, = ppl.plot( alphas, eps[:,1], label=r'$\phi = '+ str(phis[1]) + r'$',ax=ax2)
+    ppl.plot( alphas[numpy.argmin(eps[:,1])] - 0.001, numpy.min(eps[:,1]), 'o',
+              color=l1.get_color(),ax=ax2)
+    l2, = ppl.plot( alphas, eps[:,2], label=r'$\phi = '+ str(phis[2]) + r'$',ax=ax2)
+    ppl.plot( alphas[numpy.argmin(eps[:,2])] - 0.001, numpy.min(eps[:,2]), 'o',
+              color=l2.get_color(), ax=ax2)
+    l3, = ppl.plot( alphas, eps[:,3], label=r'$\phi = '+ str(phis[3]) + r'$',ax=ax2)
+    ppl.plot( alphas[numpy.argmin(eps[:,3])] - 0.001, numpy.min(eps[:,3]), 'o',
+              color=l3.get_color(), ax=ax2)
+    l4, = ppl.plot( alphas, eps[:,4], label=r'$\phi = '+ str(phis[4]) + r'$',ax=ax2)
+    ppl.plot( alphas[numpy.argmin(eps[:,4])] - 0.001, numpy.min(eps[:,4]), 'o',
+              color=l4.get_color(), ax=ax2)
+    ppl.plot( alphas, stoc_eps[:,1], '-.', color=l1.get_color(), ax=ax2)
+    ppl.plot( alphas, stoc_eps[:,2], '-.',  color=l2.get_color(), ax=ax2)
+    ppl.plot( alphas, stoc_eps[:,3], '-.',  color=l3.get_color(), ax=ax2)
+    ppl.plot( alphas, stoc_eps[:,4], '-.',  color=l4.get_color(), ax=ax2)
     ax2.set_xlabel(r'$\alpha$')
     ax2.set_ylabel(r'$\epsilon$')
     ax2.set_title(r'MMSE as a function of $\alpha$')
-    ax2.legend()
+    leg = ppl.legend(ax2)
+    fr = leg.get_frame()
+    fr.set_alpha(0.9)
     plt.savefig('figure_5_5.png',dpi=300)
     plt.savefig('figure_5_5.pdf')
     plt.savefig('figure_5_5.eps')
