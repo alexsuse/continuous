@@ -10,10 +10,9 @@ import numpy as np
 #matplotlib.use('Agg')
 #from matplotlib import rc
 #import matplotlib.pyplot as plt
-import prettyplotlib as ppl
-from prettyplotlib import plt
 import estimation as est
 from estimation import full_stoc_sigma
+import cPickle as pic
 
 T = 2
 dt = 0.001
@@ -40,19 +39,21 @@ def mf_sigma(sigma0,dt,N,a,sigma,alpha,la):
         s[i] =s[i-1]+dt*(2*a*s[i-1]+sigma**2-la*s[i-1]**2/(alpha**2+s[i-1]))
     return s
 
-def mf_f(sigma0,S,dt,a,sigma,alpha,b,q,r,la):
+def mf_f(sigma0,S,dt,N,a,sigma,alpha,b,q,r,la):
     #f = sigma0*S[0]
     f = dt*np.sum((b**2*S**2/r)*mf_sigma(sigma0,dt,S.size,a,sigma,alpha,la))
     return f
 
-def full_stoc_f(sigma0,S,dt,a,sigma,alpha,b,q,r,la,NSamples,rands=None):
+def full_stoc_f(sigma0,S,dt,N,a,sigma,alpha,b,q,r,la,NSamples,rands=None):
     #f = sigma0*S[0]
     sigmas = full_stoc_sigma(sigma0,dt,N,a,sigma,alpha,la,NSamples,rands)
     f = dt*np.sum((b**2*S**2/r)*sigmas)
     return f
 
 def kalman_sigma(sigma0,dt,N,a,sigma,alpha):
+    print N
     s = np.zeros(N)
+    print s.shape
     s[0] = sigma0
     for i in range(N)[1:]:
         change = 2*a*s[i-1]+sigma**2
@@ -62,15 +63,22 @@ def kalman_sigma(sigma0,dt,N,a,sigma,alpha):
             print "BATMAN"
     return s
 
-def lqg_f(sigma0,S,dt,a,sigma,alpha,b,q,r):
-    f = dt*np.sum((b**2*S**2/r)*kalman_sigma(sigma0,dt,S.size,a,sigma,alpha))
+def lqg_f(sigma0,S,dt,N,a,sigma,alpha,b,q,r):
+    f = dt*np.sum((b**2*S**2/r)*kalman_sigma(sigma0,dt,N,a,sigma,alpha))
     return f
+
+
+def mutual_info( dt, N, a, eta, alpha, la, NSamples, rands=None):
+    s = est.get_eq_eps(-a,eta,alpha,0)
+    sigmas = full_stoc_sigma(s, dt,N,a,eta,alpha,la,NSamples,rands)
+    return np.log(s)-np.mean([np.log(s) for s in sigmas[-1]])
 
 if __name__=='__main__':
     print __doc__
 
     # Number of time steps
     N = int(T/dt)
+    print N
 
     # precompute solutions to the Ricatti eqtn
     S = solve_riccatti(N,dt,QT,a,b,q,r)
@@ -91,6 +99,7 @@ if __name__=='__main__':
     kalman_eps = np.zeros_like(alphas)
     # lqg_fs
     lqg_fs = np.zeros_like(alphas)
+    mi = np.zeros_like(alphas)
 
     # number of samples to be used for stoch simulations  
     Nsamples = 4000
@@ -100,19 +109,34 @@ if __name__=='__main__':
     rands = np.random.uniform(size=(Nsamples,N))
 
     for i,alpha in enumerate(alphas):
+        print i
         # main loop, compute lambda
         la = np.sqrt(2*np.pi*alpha**2)*phi/dtheta
-        fs[i] = mf_f(s,S,dt,a,eta,alpha,b,q,r,la)
-        full_fs[i] = full_stoc_f(s,S,dt,a,eta,alpha,b,q,r,la,Nsamples,rands=rands)
+        fs[i] = mf_f(s,S,dt,N,a,eta,alpha,b,q,r,la)
+        full_fs[i] = full_stoc_f(s,S,dt,N,a,eta,alpha,b,q,r,la,Nsamples,rands=rands)
         estimation_eps[i] = est.get_eq_eps(-a,eta,alpha,la)
         kalman_eps[i] = est.get_eq_kalman(-a,eta,alpha)
-        lqg_fs[i] = lqg_f(s,S,dt,a,eta,alpha,b,q,r)
+        lqg_fs[i] = lqg_f(s,S,dt,N,a,eta,alpha,b,q,r)
+        mi[i] = mutual_info(dt,N,a,eta,alpha,la,Nsamples,rands=rands)
 
+    dic = {'LQG control':lqg_fs,
+           'poisson filtering':estimation_eps,
+           'kalman filtering':kalman_eps,
+           'mf poisson control':fs,
+           'full poisson control':full_fs,
+           'mutual information':mi,
+           'alphas':alphas}
+
+    with open("figure-1-1-new.pik","wb") as f:
+        pic.dump(dic,f)
+
+    import prettyplotlib as ppl
+    from prettyplotlib import plt
     # find minimum of mf cost
     fsmin,indfs = (np.min(fs),np.argmin(fs))
     # find minimum of stoch cost
     fullmin,indfull = (np.min(full_fs),np.argmin(full_fs))
-    rc('text',usetex='true')
+    #rc('text',usetex='true')
     # redimension estimation error to be on the same range as control cost
     # find minimum
     epsmin,indeps = (np.min(estimation_eps),np.argmin(estimation_eps))
@@ -126,9 +150,9 @@ if __name__=='__main__':
     #ppl.text(thetas[2],0.17,'a)')
     ppl.legend(ax1).get_frame().set_alpha(0.7)
 
-    l3,=ax2.plot( alphas, fs,label='Point Process Control (MF)',ax=ax2)
-    l4,=ax2.plot( alphas, full_fs,label='Point Process Control (Simulation)',ax=ax2 )
-    l5,=ax2.plot(  alphas, lqg_fs, '.-',label='LQG Control',ax=ax2 )
+    l3,=ppl.plot( alphas, fs,label='Point Process Control (MF)',ax=ax2)
+    l4,=ppl.plot( alphas, full_fs,label='Point Process Control (Simulation)',ax=ax2 )
+    l5,=ppl.plot(  alphas, lqg_fs, '.-',label='LQG Control',ax=ax2 )
     ppl.plot(alphas[indfs],fsmin,'o',color=l3.get_color())
     ppl.plot(alphas[indfull],fullmin,'o',color=l4.get_color())
 
