@@ -71,7 +71,8 @@ def lqg_f(sigma0,S,dt,N,a,sigma,alpha,b,q,r):
 def mutual_info( dt, N, a, eta, alpha, la, NSamples, rands=None):
     s = est.get_eq_eps(-a,eta,alpha,0)
     sigmas = full_stoc_sigma(s, dt,N,a,eta,alpha,la,NSamples,rands)
-    return np.log(s)-np.mean([np.log(s) for s in sigmas[-1]])
+    print sigmas[:,-1].shape, N, NSamples
+    return np.log(s)-np.mean(np.log(sigmas[:,-1]))
 
 if __name__=='__main__':
     print __doc__
@@ -118,6 +119,7 @@ if __name__=='__main__':
         kalman_eps[i] = est.get_eq_kalman(-a,eta,alpha)
         lqg_fs[i] = lqg_f(s,S,dt,N,a,eta,alpha,b,q,r)
         mi[i] = mutual_info(dt,N,a,eta,alpha,la,Nsamples,rands=rands)
+        print mi[i]
 
     dic = {'LQG control':lqg_fs,
            'poisson filtering':estimation_eps,
