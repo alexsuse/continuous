@@ -276,7 +276,7 @@ if __name__=='__main__':
     try:
         filename= sys.argv[1]
     except:
-        filename = 'fig-1-2-.pik'
+        filename = 'fig-1-2.pik'
 
 
     try:
@@ -289,7 +289,7 @@ if __name__=='__main__':
         k_cont_fs = dic['LQG control']
         thetas = dic['thetas']
         infos = dic['MI']
-        print thetas
+        print infos
         print "pickles good"
     except:
 
@@ -410,13 +410,13 @@ if __name__=='__main__':
             k_cont_fs[n] = v
         print 'kalman control is in'
     
-    #    gotten = []
-    #    for n,res in enumerate(info_calls):
-    #        n,v = res
-    #        gotten.append(n)
-    #        print 'MI %d entries in, %d'%(len(gotten),n)
-    #        infos[n] = v
-    #    print 'mutual information is in'
+        gotten = []
+        for n,res in enumerate(info_calls):
+            n,v = res
+            gotten.append(n)
+            print 'MI %d entries in, %d'%(len(gotten),n)
+            infos[n] = v
+        print 'mutual information is in'
     
         dic = {'poisson MMSE':est_eps,
                'kalman mmse':k_est_eps,
@@ -504,7 +504,6 @@ if __name__=='__main__':
     ax1.set_ylabel(r'$MMSE$')
     ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
     ax2.set_xlabel(r'$p$')
-    print thetas
 
     #plt.figlegend([l1,l2,l3,l4,l5],['Poisson MMSE','Kalman MMSE',r'Mean Field $f$',r'Stochastic $f$',r'LQG $f$'],'upper right')
     try:
