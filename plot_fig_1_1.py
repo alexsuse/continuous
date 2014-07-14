@@ -16,7 +16,7 @@ try:
 except:
     filename = 'figure-1-1.pik'
 
-with open("figure-1-1.pik","r") as f:
+with open(filename,"r") as f:
     dic = pic.load(f)
     lqg_fs = dic['LQG control']
     estimation_eps = dic['poisson filtering']
@@ -59,8 +59,8 @@ ax1.tick_params(axis='x',which='both',bottom='off')
 ax2.tick_params(axis='x',which='both',top='off')
 
 ax1.set_ylabel(r'$MMSE$')
-ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
-ax2.set_xlabel(r'$p$')
+ax2.set_ylabel(r'$f(\Sigma_0,0)$')
+ax2.set_xlabel(r'$\alpha$')
 
 ppl.legend(ax1,loc=4).get_frame().set_alpha(0.7)
 ppl.legend(ax2,loc=4).get_frame().set_alpha(0.7)

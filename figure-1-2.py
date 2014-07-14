@@ -216,7 +216,8 @@ def full_stoc_sigma(sigma0, dt, N, a, eta, alpha, la, NSamples, rands=None):
         splus1 = numpy.asarray( [ sigmas[i-1]+dt*nojump, jump] )
         sigmas[i] = splus1[ rands[i], range( NSamples ) ]
 
-    return numpy.mean( sigmas, axis=1 )
+    #return numpy.mean( sigmas, axis=1 )
+    return sigmas
 
 
 def full_stoc_f(sigma0, S, dt, a, eta, alpha, b, q, r, la, NSamples,rands=None):
@@ -240,7 +241,7 @@ def full_stoc_f(sigma0, S, dt, a, eta, alpha, b, q, r, la, NSamples,rands=None):
     """
     f = numpy.trace( numpy.dot( sigma0, S[0] ) )
     
-    sigmas = full_stoc_sigma( sigma0, dt, N, a, eta, alpha, la, NSamples, rands )
+    sigmas = full_stoc_sigma( sigma0, dt, N, a, eta, alpha, la, NSamples, rands ).mean(axis=1)
    
     bs = numpy.dot( S, b )
     
@@ -253,8 +254,11 @@ def full_stoc_f(sigma0, S, dt, a, eta, alpha, b, q, r, la, NSamples,rands=None):
 
 def mutual_info( dt, N, a, eta, alpha, la, NSamples, rands=None):
     s = get_eq_eps(-a,eta,alpha,0)
-    sigmas = full_stoc_sigma(s, dt,N,a,eta,alpha,la,NSamples,rands)
-    return numpy.log(numpy.linalg.det(s))-numpy.mean([numpy.log(numpy.linalg.det(s)) for s in sigmas[-1]])
+    #sigmas = full_stoc_sigma(s, dt,N,a,eta,alpha,la,NSamples,rands)
+    sig = get_eq_eps(-a,eta,alpha,la)
+    return numpy.log(numpy.linalg.det(s))-numpy.log(numpy.linalg.det(sig))
+    #print sig.shape
+    #return numpy.log(numpy.linalg.det(s))-numpy.mean([numpy.log(numpy.linalg.det(s)) for s in sigmas[-1]])
 
 if __name__=='__main__':
     print __doc__
@@ -270,8 +274,14 @@ if __name__=='__main__':
     #initial sigma value
     s = 2.0*numpy.eye(2)
     try:
+        filename= sys.argv[1]
+    except:
+        filename = 'fig-1-2-.pik'
 
-        dic = pic.load(open('fig-1-2.pik','r'))
+
+    try:
+
+        dic = pic.load(open(filename,'r'))
         est_eps = dic['poisson MMSE']
         k_est_eps = dic['kalman mmse']
         fs = dic['mean field control']
@@ -279,8 +289,10 @@ if __name__=='__main__':
         k_cont_fs = dic['LQG control']
         thetas = dic['thetas']
         infos = dic['MI']
+        print thetas
         print "pickles good"
     except:
+
         #preallocating numpy vectors for better performance
         est_eps = numpy.zeros_like( thetas )
         k_est_eps = numpy.zeros_like( thetas )
@@ -346,17 +358,17 @@ if __name__=='__main__':
         except:
             mymap = lambda (f,args): map(f,args)
         
-        est_calls = mymap((estimation, args))
+#        est_calls = mymap((estimation, args))
         print "estimation done"
-        k_est_calls = mymap((k_estimation, args))
+#        k_est_calls = mymap((k_estimation, args))
         print "kalman estimation"
-        mf_calls  = mymap((mean_field, args))
+#        mf_calls  = mymap((mean_field, args))
         print "mean field done"
-        full_calls = mymap((full_stoc, args))
+#        full_calls = mymap((full_stoc, args))
         print "stochastic done"
-        k_control_calls = mymap((k_control, args ))
+#        k_control_calls = mymap((k_control, args ))
     #    print "mutual info done"
-    #    info_calls = mymap((m_info, args))
+        info_calls = mymap((m_info, args))
         
         gotten = []
         for n,res in enumerate(k_est_calls):
@@ -416,15 +428,52 @@ if __name__=='__main__':
     
         with open('fig-1-2.pik','w') as f:
             pic.dump(dic,f)
-    
-        
+
+#    args = []
+#    for i,t in enumerate(thetas):
+#        
+#        args.append((i,t)) 
+#    NSamples = 300
+#
+#    radial = lambda t :  numpy.diag([t,0.0])
+#    la = lambda t : numpy.sqrt(2*numpy.pi*pseudo_determinant(radial(t)))*phi/dtheta
+#    
+#    m_info = lambda (n,t) : (n, mutual_info(dt, N, a, eta, radial(t), la(t), NSamples))
+#
+#    mymap = lambda (f,args): map(f,args)
+#    info_calls = mymap((m_info, args))
+#    infos = numpy.zeros_like(thetas)
+#
+#    gotten = []
+#    for n,res in enumerate(info_calls):
+#        n,v = res
+#        gotten.append(n)
+#        print 'MI %d entries in, %d'%(len(gotten),n)
+#        infos[n] = v
+#        print infos[n]
+#    print 'mutual information is in'
+#
+#    infos = numpy.array(infos)
+#
+#    dic = {'poisson MMSE':est_eps,
+#           'kalman mmse':k_est_eps,
+#           'mean field control':fs,
+#           'stochastic control':full_fs,
+#           'LQG control':k_cont_fs,
+#           'thetas':thetas,
+#           'MI':infos}
+#
+#    with open('fig-1-2-info.pik','w') as f:
+#        pic.dump(dic,f)
+#
+            
     fullmin,indfull = (numpy.min(full_fs),numpy.argmin(full_fs))
     mfmin,mfind = (numpy.min(fs),numpy.argmin(fs))
     epsmin,epsind = (numpy.min(est_eps),numpy.argmin(est_eps))
     kmin, kind = (numpy.min(k_est_eps),numpy.argmin(k_est_eps))
     lqgmin, lqgind = (numpy.min(k_cont_fs),numpy.argmin(k_cont_fs))
 
-    #infos = infos*numpy.max(est_eps)/numpy.max(infos)
+    infos = infos*numpy.max(est_eps)/numpy.max(infos)
 
     #rc('text',usetex=True)
 
@@ -432,7 +481,7 @@ if __name__=='__main__':
 
     l1, = ppl.plot(thetas, est_eps,label='Point Process filtering', ax=ax1)
     l2, = ppl.plot(thetas, k_est_eps,'-.',label='Kalman filtering',ax=ax1 )
-#    l6, = ax1.plot(thetas, infos, 'g')
+    l6, = ppl.plot(thetas[1:], infos[1:], label='Mutual Information',ax=ax1)
     ppl.plot(thetas[epsind],epsmin,'o',color = l1.get_color(),ax=ax1)
     ppl.plot(thetas[kind],kmin,'o',color=l2.get_color(),ax=ax1)
     ppl.legend(ax1).get_frame().set_alpha(0.7)
@@ -455,7 +504,8 @@ if __name__=='__main__':
     ax1.set_ylabel(r'$MMSE$')
     ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
     ax2.set_xlabel(r'$p$')
-    
+    print thetas
+
     #plt.figlegend([l1,l2,l3,l4,l5],['Poisson MMSE','Kalman MMSE',r'Mean Field $f$',r'Stochastic $f$',r'LQG $f$'],'upper right')
     try:
         sys.argv[1]

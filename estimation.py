@@ -47,6 +47,11 @@ def full_stoc_sigma(sigma0,dt,N,a,eta,alpha,la,NSamples,rands=None, discard=0):
         sigmas[:,i] = splus1[rands[:,i],range(NSamples)]
     return sigmas
 
+def mutual_info(dt,N,a,eta,alpha,la,NSamples,rands=None):
+    s0 = get_eq_eps(-a,eta,alpha,la)
+    sigmas = full_stoc_sigma(s0,dt,T,a,eta,alpha,la,NSamples,rands=rands)
+    return np.log(s0) - np.mean(np.log(sigmas[:,-1]))
+
 def replica_eps(gamma, eta, alpha, lamb, tol=1e-9):
     eps = eta**2/(2.0*gamma)
     U = lamb/(alpha**2+eps)

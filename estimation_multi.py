@@ -8,10 +8,12 @@ import numpy as numpy
 import scipy.optimize
 
 def d_eps_dt(eps,a,eta, inva,lamb,N=2):
+    rhs = numpy.dot(eps,numpy.dot(inva,eps))
+    jump_s = numpy.linalg.solve((numpy.eye(N)+numpy.dot(inva,eps)).T,rhs)
     return numpy.dot( a, eps) +\
            numpy.dot( eps, a.T) +\
            numpy.dot(eta, eta.T) -\
-           lamb*(eps - numpy.linalg.solve((numpy.eye(N)+numpy.dot(inva,eps)).T,eps))
+           lamb*jump_s
 
 def d_eps_kalman( eps, a, eta, inva ):
     return numpy.dot( a, eps) +\
@@ -30,7 +32,7 @@ def get_eq_eps(gamma,eta,alpha,lamb, N=2):
     inva = numpy.linalg.pinv(alpha)
     f = lambda e, g=gamma,et=eta,a=inva,l=lamb,N=N :\
             d_eps_dt(e.reshape((N,N)),g,et,a,l,N=N).reshape((N**2,))
-    ret =  scipy.optimize.fsolve(f,numpy.eye(N).reshape((N**2,))).reshape((N,N))
+    ret =  scipy.optimize.fsolve(f,0.1*numpy.eye(N).reshape((N**2,))).reshape((N,N))
     return ret
 
 
@@ -128,17 +130,17 @@ if __name__=='__main__':
     from prettyplotlib import plt
     from prettyplotlib import brewer2mpl
     
-    font = {'size':10}
+    font = {'size':12}
     plt.rc('font',**font)
 
-    fig, (ax1,ax2) = ppl.subplots(1,2,figsize = (9,4))
+    fig, (ax1,ax2) = ppl.subplots(1,2,figsize = (12,5))
     
     alphas2,phis2 = numpy.meshgrid(numpy.arange(alphas.min(),alphas.max()+dalpha,dalpha)-dalpha/2,
                                 numpy.arange(phis.min(),phis.max()+dphi,dphi)-dphi/2)
 
     yellorred = brewer2mpl.get_map('YlOrRd','Sequential',9).mpl_colormap
 
-    p = ax1.pcolormesh(alphas2,phis2,eps.T,cmap=yellorred)
+    p = ax1.pcolormesh(alphas2,phis2,eps.T,cmap=yellorred,rasterized=True)
     ax1.axis([alphas2.min(),alphas2.max(),phis2.min(),phis2.max()])
     p.set_clim(vmin = eps.min(), vmax = eps.max())
 
