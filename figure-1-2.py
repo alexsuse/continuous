@@ -358,16 +358,16 @@ if __name__=='__main__':
         except:
             mymap = lambda (f,args): map(f,args)
         
-#        est_calls = mymap((estimation, args))
+        est_calls = mymap((estimation, args))
         print "estimation done"
-#        k_est_calls = mymap((k_estimation, args))
+        k_est_calls = mymap((k_estimation, args))
         print "kalman estimation"
-#        mf_calls  = mymap((mean_field, args))
+        mf_calls  = mymap((mean_field, args))
         print "mean field done"
-#        full_calls = mymap((full_stoc, args))
+        full_calls = mymap((full_stoc, args))
         print "stochastic done"
-#        k_control_calls = mymap((k_control, args ))
-    #    print "mutual info done"
+        k_control_calls = mymap((k_control, args ))
+        print "mutual info done"
         info_calls = mymap((m_info, args))
         
         gotten = []
@@ -426,7 +426,7 @@ if __name__=='__main__':
                'thetas':thetas,
                'MI':infos}
     
-        with open('fig-1-2.pik','w') as f:
+        with open(filename,'w') as f:
             pic.dump(dic,f)
 
 #    args = []
