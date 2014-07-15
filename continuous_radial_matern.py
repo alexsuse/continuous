@@ -5,10 +5,6 @@ continuous.py -- evaluate the covariance part of the optimal cost-to-go for LQG 
 See git repository alexsuse/Thesis for more information.
 """
 import numpy
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib import rc
-import matplotlib.pyplot as plt
 from estimation_multi import get_eq_eps, d_eps_dt, get_eq_kalman, d_eps_kalman
 from IPython.parallel import Client
 
@@ -328,58 +324,79 @@ if __name__=='__main__':
     except:
         print "Defaulting to serial evaluation"
         mymap = lambda (f,args): map(f,args)
-    
-    est_calls = mymap((estimation, args))
-    print "estimation mapped"
-    k_est_calls = mymap((k_estimation, args))
-    print "kalman estimation mapped"
-    mf_calls  = mymap((mean_field, args))
-    print "mean field mapped"
-    full_calls = mymap((full_stoc, args))
-    print "stochastic mapped"
-    k_control_calls = mymap((k_control, args ))
-    print "LQG control  mapped"
 
-    gotten = []
-    for n,res in enumerate(k_est_calls):
-        n,v = res
-        gotten.append(n)
-        print 'Kalman %d entries in, %d'%(len(gotten),n)
-        k_est_eps[n] = v
-    print 'kalman estimation is in'
+    try:
+        dic = pic.load(open(sys.argv[1],'r'))
+        k_est_eps = dic['kalman filter']
+        est_eps = dic['poisson filter']
+        fs = dic['mean field']
+        full_fs = dic['stochastic']
+        k_cont_fs = dic['LQG']
+        thetas = dic['thetas']
+        print 'found pickle'
 
-    gotten = []
-    for n,res in enumerate(est_calls):
-        n,v = res
-        gotten.append(n)
-        print 'EST %d entries in, %d'%(len(gotten),n)
-        est_eps[n] = v
-    print 'estimation is in'
-    
-    gotten = []
-    for n,res in enumerate(mf_calls):
-        n,v = res
-        gotten.append(n)
-        print 'MF %d entries in, %d'%(len(gotten),n)
-        fs[n] = v
-    print 'mean field is in'
-    
-    gotten = []
-    for n,res in enumerate(full_calls):
-        n,v = res
-        gotten.append(n)
-        print 'Stochastic %d entries in, %d'%(len(gotten),n)
-        full_fs[n] = v
-    print 'stochastic is in too'
+    except:
+        print 'rerunning'
+        est_calls = mymap((estimation, args))
+        print "estimation mapped"
+        k_est_calls = mymap((k_estimation, args))
+        print "kalman estimation mapped"
+        mf_calls  = mymap((mean_field, args))
+        print "mean field mapped"
+        full_calls = mymap((full_stoc, args))
+        print "stochastic mapped"
+        k_control_calls = mymap((k_control, args ))
+        print "LQG control  mapped"
 
-    gotten = []
-    for n,res in enumerate(k_control_calls):
-        n,v = res
-        gotten.append(n)
-        print 'LQG %d entries in, %d'%(len(gotten),n)
-        k_cont_fs[n] = v
-    print 'kalman control is in'
+        gotten = []
+        for n,res in enumerate(k_est_calls):
+            n,v = res
+            gotten.append(n)
+            print 'Kalman %d entries in, %d'%(len(gotten),n)
+            k_est_eps[n] = v
+        print 'kalman estimation is in'
 
+        gotten = []
+        for n,res in enumerate(est_calls):
+            n,v = res
+            gotten.append(n)
+            print 'EST %d entries in, %d'%(len(gotten),n)
+            est_eps[n] = v
+        print 'estimation is in'
+        
+        gotten = []
+        for n,res in enumerate(mf_calls):
+            n,v = res
+            gotten.append(n)
+            print 'MF %d entries in, %d'%(len(gotten),n)
+            fs[n] = v
+        print 'mean field is in'
+        
+        gotten = []
+        for n,res in enumerate(full_calls):
+            n,v = res
+            gotten.append(n)
+            print 'Stochastic %d entries in, %d'%(len(gotten),n)
+            full_fs[n] = v
+        print 'stochastic is in too'
+
+        gotten = []
+        for n,res in enumerate(k_control_calls):
+            n,v = res
+            gotten.append(n)
+            print 'LQG %d entries in, %d'%(len(gotten),n)
+            k_cont_fs[n] = v
+        print 'kalman control is in'
+        
+        with open(filename,'wb') as f:
+            pic.dump({'kalman filter':k_est_eps,
+                      'poisson filter':est_eps,
+                      'mean field':fs,
+                      'stochastic':full_fs,
+                      'LQG':k_cont_fs,
+                      'thetas':thetas},
+                      f)
+            print 'dumped!'
     
     fullmin,indfull = (numpy.min(full_fs),numpy.argmin(full_fs))
     mfmin,mfind = (numpy.min(fs),numpy.argmin(fs))
@@ -387,19 +404,22 @@ if __name__=='__main__':
     kepsmin, kepsind = (numpy.min(k_est_eps), numpy.argmin(k_est_eps))
     kcontmin, kcontind = (numpy.min(k_cont_fs), numpy.argmin(k_cont_fs))
 
-    rc('text',usetex=True)
+    import prettyplotlib as ppl
+    from prettplotlib import plt
 
-    fig, (ax1,ax2) = plt.subplots(2,1,sharex=True)
+    fig, (ax1,ax2) = ppl.subplots(2,1,sharex=True)
 
-    l1, = ax1.plot(thetas, est_eps,'b')
-    #l1dash, = ax1.plot(thetas, k_est_eps,'.-k' )
-    ax1.plot(thetas[epsind],epsmin,'ko')
-    #ax1.plot(thetas[kepsind],kepsmin,'ko')
+    l1, = ppl.plot(thetas, est_eps,label='Point Process Filtering',ax=ax1)
+    l1dash, = ppl.plot(thetas, k_est_eps,label='Kalman Filtering',ax=ax1 )
+    ppl.plot(thetas[epsind],epsmin,'o',color=l1.get_color,ax=ax1)
+    ppl.plot(thetas[kepsind],kepsmin,'o',color=l1dash.get_color(), ax=ax1)
 
-    l2,l3, = ax2.plot( thetas, fs,'r', thetas, full_fs,'g')
-    #lqg, = ax2.plot( thetas, k_cont_fs,'.-k' )
-    ax2.plot(thetas[mfind],mfmin,'ko',thetas[indfull],fullmin,'ko')
-    #ax2.plot(thetas[kcontind],kcontmin,'ko')
+    l2, = ppl.plot( thetas, fs, label='Point Process Control (MF)', ax=ax2)
+    l3, = ppl.plot( thetas, full_fs, label='Point Process Control (Simulated)', ax=ax2)
+    lqg, = ppl.plot( thetas, k_cont_fs,'.-',label='LQG Control',ax=ax2 )
+    ppl.plot(thetas[mfind],mfmin,'o',color=l2.get_color(),ax=ax2)
+    ppl.plot(thetas[indfull],fullmin,'o',color=l3.get_color(),ax=ax2)
+    ppl.plot(thetas[kcontind],kcontmin,'o',color=lqg.get_color(),ax=ax2)
 
     ax1.spines['bottom'].set_visible(False)
     ax2.spines['top'].set_visible(False)
@@ -407,14 +427,13 @@ if __name__=='__main__':
     ax2.tick_params(axis='x',which='both',top='off')
    
     ax1.set_ylabel(r'$MMSE$')
-    ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
-    ax2.set_xlabel(r'$\theta$')
+    ax2.set_ylabel(r'$f(\Sigma_0,0)$')
+    ax2.set_xlabel(r'$\zeta$')
     
-    plt.figlegend([l1,l2,l3],
-                  ['estimation',
-                   'mean field','stochastic'],'upper right')
+    ppl.legend(ax1).get_frame().set_alpha(0.4)
+    ppl.legend(ax2).get_frame().set_alpha(0.4)
     #plt.figlegend([l1dash, lqg], ['Kalman filtering','LQG Control'], 'right')
-    plt.savefig('comparison_multi_radial.eps')
+    plt.savefig('comparison_multi_radial.pdf')
 
     print 'eps-optimal\n', radial(thetas[epsind])
     print 'cont-optimal\n', radial(thetas[indfull])
