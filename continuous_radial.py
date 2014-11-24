@@ -22,7 +22,7 @@ q = numpy.array([[0.4,0.0,0.0,0.0],[0.0,0.0,0.0,0.0],
                  [0.0,0.0,0.2,0.0],[0.0,0.0,0.0,0.0]]) #running state cost
 QT = 0.0*numpy.eye(4) #final state cost
 R = numpy.array([[0.0,0.0,0.0,0.0],[0.0,0.2,0.0,0.0],
-                 [0.0,0.0,0.2,0.0],[0.0,0.0,0.0,0.0]]) #running control cost
+                 [0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.2]]) #running control cost
 e =0.4
 eta = numpy.diag([0.0,e,0.0,e])
 gamma = 0.4
