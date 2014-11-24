@@ -60,7 +60,7 @@ ax2.tick_params(axis='x',which='both',top='off')
 
 ax1.set_ylabel(r'$MMSE$')
 ax2.set_ylabel(r'$f(\Sigma_0,0)$')
-ax2.set_xlabel(r'$\alpha$')
+ax2.set_xlabel(r'$p$')
 
 ppl.legend(ax1,loc=4).get_frame().set_alpha(0.7)
 ppl.legend(ax2,loc=4).get_frame().set_alpha(0.7)

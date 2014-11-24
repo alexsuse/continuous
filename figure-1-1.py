@@ -109,28 +109,44 @@ if __name__=='__main__':
     # precompute randoms for better visualization
     rands = np.random.uniform(size=(Nsamples,N))
 
-    for i,alpha in enumerate(alphas):
-        print i
-        # main loop, compute lambda
-        la = np.sqrt(2*np.pi*alpha**2)*phi/dtheta
-        fs[i] = mf_f(s,S,dt,N,a,eta,alpha,b,q,r,la)
-        full_fs[i] = full_stoc_f(s,S,dt,N,a,eta,alpha,b,q,r,la,Nsamples,rands=rands)
-        estimation_eps[i] = est.get_eq_eps(-a,eta,alpha,la)
-        kalman_eps[i] = est.get_eq_kalman(-a,eta,alpha)
-        lqg_fs[i] = lqg_f(s,S,dt,N,a,eta,alpha,b,q,r)
-        mi[i] = mutual_info(dt,N,a,eta,alpha,la,Nsamples,rands=rands)
-        print mi[i]
+    try:
+      filename = sys.argv[1]
+    except:
+      filename = 'figure-1-1-new.pik'
 
-    dic = {'LQG control':lqg_fs,
-           'poisson filtering':estimation_eps,
-           'kalman filtering':kalman_eps,
-           'mf poisson control':fs,
-           'full poisson control':full_fs,
-           'mutual information':mi,
-           'alphas':alphas}
+    try:
+      dic = pic.load(open(filename, 'r'))
+      estimation_eps = dic['poisson filtering']
+      kalman_eps = dic['kalman filtering']
+      alphas = dic['alphas']
+      mi = dic['mutal information']
+      lgq_fs = dic['LQG control']
+      full_fs = dic['full poisson control']
+      fs = dic['mf poisson control']
+    except:
 
-    with open("figure-1-1-new.pik","wb") as f:
-        pic.dump(dic,f)
+      for i,alpha in enumerate(alphas):
+          print i
+          # main loop, compute lambda
+          la = np.sqrt(2*np.pi*alpha**2)*phi/dtheta
+          fs[i] = mf_f(s,S,dt,N,a,eta,alpha,b,q,r,la)
+          full_fs[i] = full_stoc_f(s,S,dt,N,a,eta,alpha,b,q,r,la,Nsamples,rands=rands)
+          estimation_eps[i] = est.get_eq_eps(-a,eta,alpha,la)
+          kalman_eps[i] = est.get_eq_kalman(-a,eta,alpha)
+          lqg_fs[i] = lqg_f(s,S,dt,N,a,eta,alpha,b,q,r)
+          mi[i] = mutual_info(dt,N,a,eta,alpha,la,Nsamples,rands=rands)
+          print mi[i]
+
+      dic = {'LQG control':lqg_fs,
+             'poisson filtering':estimation_eps,
+             'kalman filtering':kalman_eps,
+             'mf poisson control':fs,
+             'full poisson control':full_fs,
+             'mutual information':mi,
+             'alphas':alphas}
+
+      with open("figure-1-1-new.pik","wb") as f:
+          pic.dump(dic,f)
 
     import prettyplotlib as ppl
     from prettyplotlib import plt
@@ -144,7 +160,7 @@ if __name__=='__main__':
     epsmin,indeps = (np.min(estimation_eps),np.argmin(estimation_eps))
     # plot it up
 
-    fig, (ax1,ax2) = plt.subplots(2,1,sharex=True)
+    fig, (ax1,ax2) = ppl.subplots(2,1,sharex=True)
 
     l1, = ppl.plot(alphas, estimation_eps,label='Point Process Estimation',ax=ax1)
     l2, = ppl.plot(alphas, kalman_eps, '.-',label='Kalman Filtering',ax=ax1 )
