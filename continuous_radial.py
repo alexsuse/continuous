@@ -239,7 +239,7 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.05,numpy.pi/3,.03)
+    thetas = numpy.arange(0.05,numpy.pi/2,.03)
 
     #initial sigma value
     s = 2.0*numpy.eye(2)
@@ -253,7 +253,7 @@ if __name__=='__main__':
     #estimation_eps = numpy.zeros_like(alphas)
     NSamples = 500
 
-    radial = lambda t :  0.1*numpy.diag([numpy.tan(t), 1.0/numpy.tan(t)])
+    radial = lambda t :  numpy.diag([numpy.tan(t), 1.0/numpy.tan(t)])
     la = numpy.sqrt((2*numpy.pi)**2*numpy.linalg.det(radial(thetas[0])))*phi/(dtheta**2)
     estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la )))
     mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
@@ -293,10 +293,7 @@ if __name__=='__main__':
 
     except:
         mymap = lambda (f,args): map(f,args)
-    #est_calls = dview.map_async( estimation, args, ordered=False )
-    #mf_calls = dview.map_async( mean_field, args, ordered=False )
-    #full_calls = dview.map_async( full_stoc, args, ordered=False )
-    
+ 
     est_calls = mymap((estimation, args))
     print "estimation done"
     k_est_calls = mymap((k_estimation, args))
@@ -347,14 +344,11 @@ if __name__=='__main__':
         k_cont_fs[n] = v
     print 'kalman control is in'
 
-    
     fullmin,indfull = (numpy.min(full_fs),numpy.argmin(full_fs))
     mfmin,mfind = (numpy.min(fs),numpy.argmin(fs))
     epsmin,epsind = (numpy.min(est_eps),numpy.argmin(est_eps))
     kmin, kind = (numpy.min(k_est_eps),numpy.argmin(k_est_eps))
     lqgmin, lqgind = (numpy.min(k_cont_fs),numpy.argmin(k_cont_fs))
-
-    #rc('text',usetex=True)
 
     fig, (ax1,ax2) = ppl.subplots(2,1,sharex=True)
 
@@ -374,14 +368,14 @@ if __name__=='__main__':
 
     print "lqg",lqgind,thetas[lqgind],lqgmin
 
-    #ax1.spines['bottom'].set_visible(False)
-    #ax2.spines['top'].set_visible(False)
-    #ax1.tick_params(axis='x',which='both',bottom='off')
-    #ax2.tick_params(axis='x',which='both',top='off')
+    ax1.spines['bottom'].set_visible(False)
+    ax2.spines['top'].set_visible(False)
+    ax1.tick_params(axis='x',which='both',bottom='off')
+    ax2.tick_params(axis='x',which='both',top='off')
 
-    #ax1.set_ylabel(r'$MMSE$')
-    #ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
-    #ax2.set_xlabel(r'$\zeta$')
+    ax1.set_ylabel(r'$MMSE$')
+    ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
+    ax2.set_xlabel(r'$\zeta$')
     ppl.legend(ax1,loc=4).get_frame().set_alpha(0.7)
     ppl.legend(ax2,loc=4).get_frame().set_alpha(0.7)
 
