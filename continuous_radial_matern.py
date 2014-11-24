@@ -28,7 +28,7 @@ R = numpy.array([[0.0,0.0,0.0,0.0],
                  [0.0,0.0,0.0,0.0],
                  [0.0,0.0,0.0,0.02]]) #running control cost
 eta = .6*numpy.diag([0.0,1.0,0.0,1.0]) #system noise
-gamma = 0.1
+gamma = 0.4
 a = numpy.array([[0.0,1.0,0.0,0.0],
                  [-gamma**2,-2*gamma,0.0,0.0],
                  [0.0,0.0,0.0,1.0],

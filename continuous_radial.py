@@ -6,26 +6,28 @@ See git repository alexsuse/Thesis for more information.
 """
 import sys
 import numpy
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib import rc
-import matplotlib.pyplot as plt
+##import matplotlib
+##matplotlib.use('Agg')
+##from matplotlib import rc
+##import matplotlib.pyplot as plt
 from estimation_multi import get_eq_eps, d_eps_dt, get_eq_kalman, d_eps_kalman
 from IPython.parallel import Client
+import prettyplotlib as ppl
+from prettyplotlib import plt
 
 """
 Parameters, really ugly, well...
 """
 T = 2
 dt = 0.001
-q = numpy.array([[0.02,0.0],[0.0,0.01]]) #running state cost
+q = numpy.array([[0.2,0.0],[0.0,0.1]]) #running state cost
 QT = 0.0*q #final state cost
-R = numpy.array([[0.02,0.0],[0.0,0.02]]) #running control cost
-eta = .4*numpy.eye(2) #system noise
-a = -0.5*numpy.eye(2) #system regenerative force
-b = 0.2*numpy.eye(2) #control constant
-dtheta = 0.05 #neuron spacing
-phi = 1.0 #neuron maximal rate
+R = numpy.array([[0.1,0.0],[0.0,0.2]]) #running control cost
+eta = .6*numpy.eye(2) #system noise
+a = -0.4*numpy.eye(2) #system regenerative force
+b = 1.0*numpy.eye(2) #control constant
+dtheta = 0.1 #neuron spacing
+phi = 0.5 #neuron maximal rate
 
 
 def solve_riccatti(N,dt,QT,a,b,q,r):
@@ -237,7 +239,7 @@ if __name__=='__main__':
     S = solve_riccatti(N,dt,QT,a,b,q,R)
 
     #range of covariance matrices evaluated
-    thetas = numpy.arange(0.005,numpy.pi/2,.03)
+    thetas = numpy.arange(0.05,numpy.pi/3,.03)
 
     #initial sigma value
     s = 2.0*numpy.eye(2)
@@ -352,31 +354,41 @@ if __name__=='__main__':
     kmin, kind = (numpy.min(k_est_eps),numpy.argmin(k_est_eps))
     lqgmin, lqgind = (numpy.min(k_cont_fs),numpy.argmin(k_cont_fs))
 
-    rc('text',usetex=True)
+    #rc('text',usetex=True)
 
-    fig, (ax1,ax2) = plt.subplots(2,1,sharex=True)
+    fig, (ax1,ax2) = ppl.subplots(2,1,sharex=True)
 
-    l1,l2 = ax1.plot(thetas, est_eps,'b', thetas, k_est_eps,'k-.' )
-    ax1.plot(thetas[epsind],epsmin,'ko',thetas[kind],kmin,'ko')
+    l1, = ppl.plot(thetas, est_eps, label='Point Process Filtering', ax=ax1)
+    l2, = ppl.plot(thetas, k_est_eps,label = 'Kalman Filtering',ax=ax1)
+    ppl.plot(thetas[epsind],epsmin,'o',color = l1.get_color(), ax=ax1)
+    ppl.plot(thetas[kind],kmin,'o',color = l2.get_color(), ax=ax1)
 
-    ax1.text(thetas[2],0.16,'a)')
+    #ax1.text(thetas[2],0.16,'a)')
 
-    l3,l4,l5 = ax2.plot( thetas, fs,'r', thetas, full_fs,'g', thetas, k_cont_fs,'k-.' )
-    ax2.plot(thetas[mfind],mfmin,'ko',thetas[indfull],fullmin,'ko',thetas[lqgind],lqgmin,'ko')
+    l3, = ppl.plot(thetas, fs, label = 'Point Process Control (MF)', ax=ax2)
+    l4, = ppl.plot(thetas, full_fs, label='Point Process Control (simulated)', ax=ax2)
+    l5, = ppl.plot(thetas, k_cont_fs, label='LQG Control', ax=ax2 )
+    ppl.plot(thetas[mfind],mfmin,'o',color=l3.get_color(), ax=ax2)
+    ppl.plot(thetas[indfull], fullmin, 'o', color=l4.get_color(), ax=ax2)
+    ppl.plot(thetas[lqgind], lqgmin, 'o', color=l5.get_color(), ax=ax2)
 
     print "lqg",lqgind,thetas[lqgind],lqgmin
 
-    ax1.spines['bottom'].set_visible(False)
-    ax2.spines['top'].set_visible(False)
-    ax1.tick_params(axis='x',which='both',bottom='off')
-    ax2.tick_params(axis='x',which='both',top='off')
-   
-    ax1.set_ylabel(r'$MMSE$')
-    ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
-    ax2.set_xlabel(r'$\zeta$')
-    
-    plt.figlegend([l1,l2,l3,l4,l5],['Poisson MMSE','Kalman MMSE',r'Mean Field $f$',r'Stochastic $f$',r'LQG $f$'],'upper right')
+    #ax1.spines['bottom'].set_visible(False)
+    #ax2.spines['top'].set_visible(False)
+    #ax1.tick_params(axis='x',which='both',bottom='off')
+    #ax2.tick_params(axis='x',which='both',top='off')
+
+    #ax1.set_ylabel(r'$MMSE$')
+    #ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
+    #ax2.set_xlabel(r'$\zeta$')
+    ppl.legend(ax1,loc=4).get_frame().set_alpha(0.7)
+    ppl.legend(ax2,loc=4).get_frame().set_alpha(0.7)
+
+
+    #plt.figlegend([l1,l2,l3,l4,l5],['Poisson MMSE','Kalman MMSE',r'Mean Field $f$',r'Stochastic $f$',r'LQG $f$'],'upper right')
     print "Saving figure to "+sys.argv[1]+".png"
+    plt.savefig(sys.argv[1]+'.pdf')
     plt.savefig(sys.argv[1]+'.png',dpi=200)
     plt.savefig(sys.argv[1]+'.eps')
 
