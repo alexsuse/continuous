@@ -48,7 +48,7 @@ ppl.plot(alphas[indeps],epsmin,'o',color=l1.get_color(),ax=ax1)
 #ax1.text(alphas[2],0.16,'a)')
 
 l3,=ppl.plot( alphas, fs, label='Point Process Control (MF)',ax=ax2)
-l4, = ppl.plot(alphas, full_fs, label='Point Process Control (Simulated)',ax=ax2 )
+l4, = ppl.plot(alphas, full_fs, label='Point Process Control (Numeric)',ax=ax2 )
 l5, = ppl.plot(  alphas, lqg_fs, '-.', label='LQG Control', ax=ax2 )
 ppl.plot(alphas[indfs],fsmin,'o',color=l3.get_color(),ax=ax2)
 ppl.plot(alphas[indfull],fullmin,'o',color=l4.get_color(),ax=ax2)
