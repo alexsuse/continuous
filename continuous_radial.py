@@ -258,8 +258,8 @@ if __name__=='__main__':
     estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la )))
     mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
     full_stoc = lambda (n,t) : (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la,NSamples,rands=rands))
-    k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, radial(t) ) ) )
-    k_control = lambda (n,t) : (n, kalman_f(s, S, dt, a, eta, radial(t), b, q, R ) )
+    k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, la*radial(t) ) ) )
+    k_control = lambda (n,t) : (n, kalman_f(s, S, dt, a, eta, la*radial(t), b, q, R ) )
 
     print 'running '+str(thetas.shape[0])+' runs'
     rands = numpy.random.uniform(size=(N,NSamples))
@@ -376,8 +376,8 @@ if __name__=='__main__':
     ax1.set_ylabel(r'$MMSE$')
     ax2.set_ylabel(r'$f(\Sigma_0,t_0)$')
     ax2.set_xlabel(r'$\zeta$')
-    ppl.legend(ax1,loc=4).get_frame().set_alpha(0.7)
-    ppl.legend(ax2,loc=4).get_frame().set_alpha(0.7)
+    ppl.legend(ax1,loc=3).get_frame().set_alpha(0.7)
+    ppl.legend(ax2,loc=3).get_frame().set_alpha(0.7)
 
 
     #plt.figlegend([l1,l2,l3,l4,l5],['Poisson MMSE','Kalman MMSE',r'Mean Field $f$',r'Stochastic $f$',r'LQG $f$'],'upper right')
