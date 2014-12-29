@@ -49,15 +49,14 @@ def solve_riccatti(N,dt,QT,a,b,q,r):
     for i in range(N-1):
         Sa = numpy.dot( s[N-i-1], a)
         Sb = numpy.dot( s[N-i-1], b.T)
-        s[N-i-2] = s[N-i-1]+dt*(- numpy.dot( Sb, numpy.linalg.solve( R, Sb.T ) ) + Sa + Sa.T + 0.5 * q ) 
+        s[N-i-2] = s[N-i-1]+dt*(-numpy.dot(Sb, numpy.linalg.solve(R, Sb.T)) \
+                                + Sa + Sa.T + 0.5 * q)
     return s
 
 def kalman_f(sigma0,S,dt,a, eta ,alpha,b,q,r):
     """
-    mf_f computes the mean-field approximation
-    to the variance component of the control cost
-    given by the function f. The value of f is given
-    by tr(s(0) sigma0 ) + int tr[s(y) b R^-1(y) b s(y) sigma(y)] dy
+    kalman_f computes the covariance-dependent control cost for the LQG control
+    problem. The value is given int tr[s(y) b^T R^-1(y) b s(y) sigma(y)] dy
     arguments:
     sigma0 :: initial value of sigma at t=0
     S      :: solution of the riccatti equation
@@ -68,18 +67,18 @@ def kalman_f(sigma0,S,dt,a, eta ,alpha,b,q,r):
     b      :: control parameter of system
     q      :: state-cost parameters
     r      :: control-cost parameters
-    la     :: population firing rate
     """
-    f = numpy.trace( numpy.dot( sigma0, S[0] ) )
+    f = numpy.trace(numpy.dot(sigma0, S[0]))
 
-    sigmas = kalman_sigma( sigma0, dt, S.size, a, eta, alpha )
+    sigmas = kalman_sigma(sigma0, dt, S.size, a, eta, alpha)
 
-    bs = numpy.dot( S, b.T)
+    bs = numpy.dot(S, b.T)
 
-    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.solve( R, numpy.dot( bss.T, sigmas[i] ) ) ) for i,bss in enumerate(bs) ]  , axis = 0) )
-    
+    ls = [numpy.dot(bss, numpy.linalg.solve(R, numpy.dot(bss.T, sigmas[i]))) \
+          for i, bss in enumerate(bs)]
+    integral = numpy.trace(numpy.sum(ls, axis=0))
     f += dt * integral
-    
+
     return f
 
 def mf_f(sigma0,S,dt,a, eta ,alpha,b,q,r,la):
@@ -106,18 +105,19 @@ def mf_f(sigma0,S,dt,a, eta ,alpha,b,q,r,la):
 
     bs = numpy.dot( S, b.T)
 
-    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.solve( R, numpy.dot( bss.T, sigmas[i] ) ) ) for i,bss in enumerate(bs) ]  , axis = 0) )
-    
+
+    ls = [numpy.dot(bss, numpy.linalg.solve(R, numpy.dot(bss.T, sigmas[i]))) \
+          for i,bss in enumerate(bs)]
+    integral = numpy.trace(numpy.sum(ls, axis=0))
     f += dt * integral
-    
+
     return f
 
 
 def kalman_sigma(sigma0, dt, N, a , eta, alpha):
     """
-    mf_sigma computes the expected value of sigma
-    under the mean-field approximation given hte parameters.
-    system dynamics is given by
+    kalman_sigma computes the expected value of sigma
+    under the kalman-bucy filter for a system evolving as
     dx = a x dt + eta dW
     arguments are
     sigma0 :: initial value of sigma at t=0
@@ -126,7 +126,6 @@ def kalman_sigma(sigma0, dt, N, a , eta, alpha):
     a      :: parameter of system dynamics
     eta    :: sqrt of covariance matrix
     alpha  :: width of tuninig functinos
-    la     :: population firing rate
     """
     s = numpy.zeros((N,2,2))
     s[0] = sigma0
@@ -157,7 +156,7 @@ def mf_sigma(sigma0, dt, N, a , eta, alpha, la):
     eta2 = numpy.dot( eta, eta.T )
     for i in xrange(1,N):
         sigma_a = numpy.dot( s[i-1] , a )
-        jump_term = numpy.dot(s[i-1],numpy.linalg.solve( s[i-1] + alpha, s[i-1] ))
+        jump_term = numpy.dot(s[i-1],numpy.linalg.solve(s[i-1] + alpha, s[i-1]))
         s[i] =s[i-1]+dt*( sigma_a + sigma_a.T + eta2 -la*jump_term )
     return s
 
@@ -193,7 +192,8 @@ def full_stoc_sigma(sigma0, dt, N, a, eta, alpha, la, NSamples, rands=None):
     for i in xrange(1,N):
         asigmas = numpy.dot( sigmas[i-1], a) 
         nojump = asigmas + asigmas.swapaxes( 1, 2 ) + eta2
-        jump = [ numpy.dot(si,numpy.linalg.solve( si + alpha, alpha )) for si in sigmas[i-1]]
+        jump = [numpy.dot(si,numpy.linalg.solve( si + alpha, alpha )) \
+                for si in sigmas[i-1]]
         splus1 = numpy.asarray( [ sigmas[i-1]+dt*nojump, jump] )
         sigmas[i] = splus1[ rands[i], range( NSamples ) ]
 
@@ -204,7 +204,7 @@ def full_stoc_f(sigma0, S, dt, a, eta, alpha, b, q, r, la, NSamples,rands=None):
     """
     Computes the full stochastic version of covariance
     component of the control cost. It computes the expected
-    value of the covariance and then uses the same formula as 
+    value of the covariance and then uses the same formula as
     mf_f. args
     sigma0 :: initial value of sigma
     S      :: solution of the ricatti equation
@@ -220,13 +220,14 @@ def full_stoc_f(sigma0, S, dt, a, eta, alpha, b, q, r, la, NSamples,rands=None):
     rands  :: precomputed random nubers (optional)
     """
     f = numpy.trace( numpy.dot( sigma0, S[0] ) )
-    
-    sigmas = full_stoc_sigma( sigma0, dt, N, a, eta, alpha, la, NSamples, rands )
-   
-    bs = numpy.dot( S, b )
-    
-    integral = numpy.trace( numpy.sum( [ numpy.dot( bss, numpy.linalg.solve( R, numpy.dot( bss.T, sigmas[i] ) ) ) for i,bss in enumerate(bs) ], axis = 0  ) )
 
+    sigmas = full_stoc_sigma(sigma0, dt, N, a, eta, alpha, la, NSamples, rands)
+
+    bs = numpy.dot(S, b)
+
+    ls = [numpy.dot(bss, numpy.linalg.solve(R, numpy.dot(bss.T, sigmas[i]))) \
+          for i,bss in enumerate(bs)]
+    integral = numpy.trace( numpy.sum(ls, axis=0))
     f += dt * integral
     return f
 
@@ -254,20 +255,25 @@ if __name__=='__main__':
     NSamples = 500
 
     radial = lambda t :  numpy.diag([numpy.tan(t), 1.0/numpy.tan(t)])
-    la = numpy.sqrt((2*numpy.pi)**2*numpy.linalg.det(radial(thetas[0])))*phi/(dtheta**2)
-    estimation = lambda (n,t) : (n, numpy.trace( get_eq_eps( a, eta, radial(t), la )))
-    mean_field = lambda (n,t) : (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
-    full_stoc = lambda (n,t) : (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la,NSamples,rands=rands))
-    k_estimation = lambda (n,t) : (n, numpy.trace( get_eq_kalman( a, eta, la*radial(t) ) ) )
-    k_control = lambda (n,t) : (n, kalman_f(s, S, dt, a, eta, la*radial(t), b, q, R ) )
+    la = numpy.sqrt((2*numpy.pi)**2 *\
+                    numpy.linalg.det(radial(thetas[0])))*phi/(dtheta**2)
+    estimation = lambda (n,t) : \
+        (n, numpy.trace( get_eq_eps( a, eta, radial(t), la )))
+    mean_field = lambda (n,t) : \
+        (n,mf_f(s,S,dt,a,eta,radial(t),b,q,R,la))
+    full_stoc = lambda (n,t) : \
+        (n,full_stoc_f(s,S,dt,a,eta,radial(t),b,q,R,la,NSamples,rands=rands))
+    k_estimation = lambda (n,t) : \
+        (n, numpy.trace( get_eq_kalman( a, eta, la*radial(t) ) ) )
+    k_control = lambda (n,t) : \
+        (n, kalman_f(s, S, dt, a, eta, la*radial(t), b, q, R ) )
 
     print 'running '+str(thetas.shape[0])+' runs'
     rands = numpy.random.uniform(size=(N,NSamples))
 
     args = []
     for i,t in enumerate(thetas):
-        
-        args.append((i,t)) 
+        args.append((i,t))
 
     try:
         c = Client()
@@ -286,14 +292,16 @@ if __name__=='__main__':
         dview.push({'radial':radial})
         dview.push({'get_eq_eps':get_eq_eps,'d_eps_dt':d_eps_dt,
                     'get_eq_kalman':get_eq_kalman,'d_eps_kalman':d_eps_kalman})
-        dview.push({'mf_f':mf_f,'full_stoc_f':full_stoc_f,'s':s,'S':S,'a':a,'N':N,'la':la,
-                    'eta':eta,'b':b,'q':q,'R':R,'NSamples':NSamples,'rands':rands,'dt':dt})
-        dview.push({'mf_sigma':mf_sigma,'full_stoc_sigma':full_stoc_sigma,'estimation':estimation,
-                    'kalman_sigma':kalman_sigma,'kalman_f':kalman_f})
+        dview.push({'mf_f':mf_f,'full_stoc_f':full_stoc_f,'s':s,'S':S,'a':a,
+                    'N':N,'la':la,'eta':eta,'b':b,'q':q,'R':R,
+                    'NSamples':NSamples,'rands':rands,'dt':dt})
+        dview.push({'mf_sigma':mf_sigma,'full_stoc_sigma':full_stoc_sigma,
+                    'estimation':estimation,'kalman_sigma':kalman_sigma,
+                    'kalman_f':kalman_f})
 
     except:
         mymap = lambda (f,args): map(f,args)
- 
+
     est_calls = mymap((estimation, args))
     print "estimation done"
     k_est_calls = mymap((k_estimation, args))
@@ -319,7 +327,7 @@ if __name__=='__main__':
         print 'EST %d entries in, %d'%(len(gotten),n)
         est_eps[n] = v
     print 'estimation is in'
-    
+
     gotten = []
     for n,res in enumerate(mf_calls):
         n,v = res
@@ -327,7 +335,7 @@ if __name__=='__main__':
         print 'MF %d entries in, %d'%(len(gotten),n)
         fs[n] = v
     print 'mean field is in'
-    
+
     gotten = []
     for n,res in enumerate(full_calls):
         n,v = res
@@ -357,7 +365,6 @@ if __name__=='__main__':
     ppl.plot(thetas[epsind],epsmin,'o',color = l1.get_color(), ax=ax1)
     ppl.plot(thetas[kind],kmin,'o',color = l2.get_color(), ax=ax1)
 
-    #ax1.text(thetas[2],0.16,'a)')
 
     l3, = ppl.plot(thetas, fs, label = 'Point Process Control (MF)', ax=ax2)
     l4, = ppl.plot(thetas, full_fs, label='Point Process Control (simulated)', ax=ax2)
@@ -380,7 +387,6 @@ if __name__=='__main__':
     ppl.legend(ax2,loc=3).get_frame().set_alpha(0.7)
 
 
-    #plt.figlegend([l1,l2,l3,l4,l5],['Poisson MMSE','Kalman MMSE',r'Mean Field $f$',r'Stochastic $f$',r'LQG $f$'],'upper right')
     print "Saving figure to "+sys.argv[1]+".png"
     plt.savefig(sys.argv[1]+'.pdf')
     plt.savefig(sys.argv[1]+'.png',dpi=200)
